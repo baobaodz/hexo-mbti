@@ -1,0 +1,26 @@
+# Node.js 依赖目录
+node_modules/
+
+# 日志文件
+*.log
+
+# 操作系统生成的文件
+.DS_Store
+Thumbs.db
+
+# 编辑器配置文件
+.vscode/
+.idea/
+
+# 构建输出目录
+dist/
+
+# 环境配置文件
+.env
+
+# npm 包锁定文件 (如果你不想包含它)
+package-lock.json
+
+# Hexo 生成的文件
+db.json
+public/
