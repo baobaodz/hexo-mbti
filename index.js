@@ -5,20 +5,25 @@ const path = require('path');
 const pkg = require("./package.json");
 const config = require("./lib/config")(hexo);
 const copyFile = require("./lib/utils").copyFile.bind(hexo);
+const { personalityTypes } = require('./js/data');
 
 
 let cssHref = `/css/${pkg.name}.css`;
 let jsSrc = `/js/${pkg.name}.js`;
+let dataJsSrc = `/js/${pkg.name}-data.js`
 if (config.cdn) {
     cssHref = `https://cdn.jsdelivr.net/npm/${pkg.name}@${pkg.version}/css/index.css`;
     jsSrc = `https://cdn.jsdelivr.net/npm/${pkg.name}@${pkg.version}/js/index.js`;
+    dataJsSrc = `https://cdn.jsdelivr.net/npm/${pkg.name}@${pkg.version}/js/data.js`;
 } else {
     copyFile(`${pkg.name}-css`, cssHref, path.join(__dirname, "./css/index.css"));
     copyFile(`${pkg.name}-js`, jsSrc, path.join(__dirname, "./js/script.js"));
+    copyFile(`${pkg.name}-data-js`, dataJsSrc, path.join(__dirname, "./js/data.js"));
 }
 
 const linkTag = `<link href="${cssHref}" rel="stylesheet"/>`;
 const scriptTag = `<script src="${jsSrc}"></script>`;
+const dataScriptTag = `<script src="${dataJsSrc}"></script>`;
 
 
 /**
@@ -34,11 +39,8 @@ function insertToHtml(layout) {
 
         const script = `
         <script>
-            const container = document.getElementById('mbti-container');
-            const mbtiDimensions = getMBTIDimensions(${JSON.stringify(config)});
-            container.innerHTML = getMBTIBars(mbtiDimensions);
-            console.log('insertToHtml slide: ', ${config.slide});
-            addSliderListeners(mbtiDimensions, ${config.slide});
+            console.log('personalityTypes: ', ${JSON.stringify(personalityTypes)})
+            initializeMBTI(${JSON.stringify(config)});
         </script>
         `;
         const mbtiContent = mbtiContainer + script;
@@ -49,15 +51,8 @@ function insertToHtml(layout) {
         );
     });
     hexo.extend.injector.register("head_begin", linkTag, layout);
+    hexo.extend.injector.register("body_end", dataScriptTag, layout);
     hexo.extend.injector.register("body_end", scriptTag, layout);
-
-    if (config.hide) {
-        hexo.extend.injector.register(
-            "body_end",
-            "<style>#widget-tree-button{opacity:0}</style>",
-            layout
-        );
-    }
 }
 
 if (Array.isArray(config.layout)) {
@@ -67,32 +62,3 @@ if (Array.isArray(config.layout)) {
 } else {
     insertToHtml(config.layout);
 }
-
-// 插件初始化
-hexo.extend.filter.register('after_generate', function(data) {
-    if (hexo.config.mbtiData) {
-        // const { introversion, extraversion, sensing, intuition, feeling, thinking, judging, perceiving, assertiveness, fluctuation } = hexo.config.mbtiData;
-
-        // const mbtiContainer = `<div class="mbti-card" id="mbti-container">
-
-        // </div>`;
-        // const scriptContent = fs.readFileSync(path.join(__dirname, 'script.js'), 'utf8');
-        // const cssContent = fs.readFileSync(path.join(__dirname, 'styles.css'), 'utf8');
-
-        // const script = `
-        //      <script>
-        //         ${scriptContent}
-        //      </script>
-        // `;
-        // const css = `
-        //     <style>
-        //       ${cssContent}
-        //     </style>
-        // `;
-
-        // const mbtiContent = mbtiContainer + script + css;
-
-        // // 将内容注入到about页面
-        // hexo.extend.injector.register('body_end', mbtiContent, 'about');
-    }
-});
