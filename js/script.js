@@ -131,7 +131,7 @@ function initializeMBTI(config) {
     }
 
     const calculatePersonalityType = (mbtiDimensions) => {
-        const type = mbtiDimensions.slice(0, 4).map(d => d.value[0] > 50 ? d.id[0].toUpperCase() : d.id[1].toUpperCase()).join('');
+        const type = mbtiDimensions.slice(0, 4).map(d => d.value[0] < 50 ? d.id[0].toUpperCase() : d.id[1].toUpperCase()).join('');
         const personalityType = personalityTypes.find(p => p.type === type);
 
         if (!personalityType) {
@@ -145,12 +145,12 @@ function initializeMBTI(config) {
         };
         result = {
             ...result,
-            avatar: `${imagesHostUrl}/${result.type.toLowerCase()}-${personalityType.name.en.toLowerCase()}-s3-v1-${config.gender}.png`,
+            avatar: `${imagesHostUrl}/${result.type.toLowerCase()}-${personalityType.name.en.toLowerCase()}-s3-v1-${config.gender}.png?t=${Date.now()}`,
             // avatar: personalityType.avatar[config.gender]
         }
 
         if (mbtiDimensions.length > 4) {
-            const atDimension = mbtiDimensions[4].value[0] > 50 ? 'A' : 'T';
+            const atDimension = mbtiDimensions[4].value[0] < 50 ? 'A' : 'T';
             result.type += '-' + atDimension;
         }
         console.log('Calculated Personality Type:', result);
