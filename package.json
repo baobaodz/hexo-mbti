@@ -1,17 +1,36 @@
 {
     "name": "hexo-mbti",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "description": "mbti",
     "main": "index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "keywords": [
-        "hexo"
+        "hexo",
+        "plugin",
+        "mbti",
+        "16personalities",
+        "personality",
+        "psychology"
     ],
     "hexo": {
-        "version": "7.3.0"
+        "version": ">=3.0.0"
     },
+    "files": [
+        "index.js",
+        "lib",
+        "css",
+        "js"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/baobaodz/hexo-mbti.git"
+    },
+    "bugs": {
+        "url": "https://github.com/baobaodz/hexo-mbti/issues"
+    },
+    "homepage": "https://github.com/baobaodz/hexo-mbti#readme",
     "author": "baobaodz",
     "license": "ISC"
 }
