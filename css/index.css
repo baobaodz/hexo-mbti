@@ -8,6 +8,7 @@
 
 .personality-avatar {
     width: 80px;
+    min-width: 80px;
     height: 80px;
     margin-right: 20px;
     clip-path: polygon(58% 2%, 94% 25%, 100% 75%, 50% 90%, 3% 69%, 13% 27%);
@@ -22,31 +23,29 @@
     transform: scale(1.1);
 }
 
-.personality-info h2 {
+.personality-info {
+    width: 100%;
+}
+
+.personality-info div {
     margin: 0;
-    font-size: 20px;
+    font-size: 24px;
+    font-weight: bold;
 }
 
 .personality-info span {
     display: inline-flex;
+    width: 100%;
     margin: 5px 0 0;
-    font-size: 12px;
+    font-size: 15px;
     color: #777777;
 }
 
-.reset-button {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    padding: 5px 10px;
-    background-color: #f0f0f0;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-.reset-button:hover {
-    background-color: #e0e0e0;
+.personality-btns {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
 }
 
 .mbti-card {
@@ -93,7 +92,7 @@
 
 @media (max-width: 768px) {
     .trait-container {
-        flex-direction: column;
+        flex-direction: row;
     }
     .slider-container {
         width: 100%;

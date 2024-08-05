@@ -1,18 +1,38 @@
 function initializeMBTI(config) {
     const imagesHostUrl = 'https://cdn.jsdelivr.net/gh/baobaodz/picx-images-hosting@master/hexo-mbti'
-    const createHeaderHTML = (personalityType, showResetButton) => {
-        const resetButton = showResetButton ?
-            '<div class="reset-button-container"><button id="reset-mbti" class="reset-button">重置</button></div>' : '';
+    const createHeaderHTML = (personalityType) => {
+        const resetButton = config.slide ?
+            `
+            <div id="reset-mbti" class="reset-button">
+                <svg t="1722666313154" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="28600" width="32" height="32" style="padding: 6px;">
+                    <path d="M307.045 256.85l112.95 30.285-21.51 80.234-160.559-43.02-80.325-21.465L222.176 62l80.28 21.51-23.306 87.075C421.44 57.412 624.506 62.952 760.42 183.715s165.298 321.766 69.649 476.387-288.631 218.062-457.367 150.364-264.36-246.93-226.62-424.781l80.46 21.598a290.925 290.925 0 1 0 80.55-150.385l-0.046-0.045zM137.981 878.883h748.125V962H137.98v-83.117z" fill="#6e6e6e" fill-opacity=".8" p-id="28601"></path>
+                </svg>            
+            </div>
+            ` : '';
+        const downloadButton = `
+            <div id="download-mbti">
+                <svg t="1722664481467" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1500" width="32" height="32">
+                    <path d="M276.195556 325.688889v244.195555l149.959111-106.126222a28.444444 28.444444 0 0 1 33.735111 0.625778l77.966222 59.648 164.721778-130.474667V325.688889H276.195556z m0 313.884444v58.737778h280.177777a28.444444 28.444444 0 1 1 0 56.888889H261.973333c-23.665778 0-42.666667-19.000889-42.666666-42.666667v-401.066666c0-23.665778 19.000889-42.666667 42.666666-42.666667H716.8c23.665778 0 42.666667 19.000889 42.666667 42.666667v95.857777a28.444444 28.444444 0 0 1-10.808889 22.300445l-192.853334 152.746667a28.444444 28.444444 0 0 1-34.901333 0.284444l-78.961778-60.387556-165.745777 117.276445z" fill="#6e6e6e" fill-opacity=".8" p-id="1501"></path>
+                    <path d="M364.088889 438.328889a35.555556 35.555556 0 1 0 0-71.111111 35.555556 35.555556 0 0 0 0 71.111111z" fill="#6e6e6e" fill-opacity=".8" p-id="1502"></path>
+                    <path d="M813.425778 630.698667a28.444444 28.444444 0 0 1 0 40.220444l-75.946667 75.946667a28.444444 28.444444 0 0 1-40.220444 0l-75.662223-75.662222a28.444444 28.444444 0 0 1 40.220445-40.220445l55.552 55.552 55.836444-55.836444a28.444444 28.444444 0 0 1 40.220445 0z" fill="#000000" fill-opacity=".8" p-id="1503"></path><path d="M717.368889 521.102222a28.444444 28.444444 0 0 1 28.444444 28.444445v176.924444a28.444444 28.444444 0 1 1-56.888889 0v-176.924444a28.444444 28.444444 0 0 1 28.444445-28.444445z" fill="#6e6e6e" fill-opacity=".8" p-id="1504"></path>
+                </svg>
+            </div>
+            `
+
         return `
             <div class="mbti-header">
                 <div class="personality-avatar">
                     <img src="${personalityType.avatar}" alt="${personalityType.name}">
                 </div>
                 <div class="personality-info">
-                    <h2>${personalityType.name} (${personalityType.type})</h2>
+                    <div>${personalityType.name} (${personalityType.type})</div>
                     <span>${personalityType.desc}</span>
                 </div>
-                ${resetButton}
+                <div class="personality-btns">
+                    ${resetButton}
+                    ${downloadButton}
+                </div>
+ 
             </div>
         `;
     }
@@ -88,8 +108,8 @@ function initializeMBTI(config) {
             const currentType = newValue > 50 ? 1 : 0;
             if (currentType !== lastType) {
                 lastType = currentType;
-                const personalityType = calculatePersonalityType(mbtiDimensions);
-                updatePersonalityTypeDisplay(personalityType);
+                currentPersonalityType = calculatePersonalityType(mbtiDimensions);
+                updatePersonalityTypeDisplay(currentPersonalityType);
             }
         });
     }
@@ -105,14 +125,10 @@ function initializeMBTI(config) {
 
         // 更新个性类型信息
         personalityInfoElement.innerHTML = `
-            <h2>${personalityType.name} (${personalityType.type})</h2>
+            <div>${personalityType.name} (${personalityType.type})</div>
             <span>${personalityType.desc}</span>
         `;
 
-        // 更新或添加重置按钮
-        if (config.slide) {
-            document.getElementById('reset-mbti').addEventListener('click', resetMBTI);
-        }
     }
     const getLocalizedContent = (content) => {
         return content[config.language];
@@ -129,7 +145,33 @@ function initializeMBTI(config) {
         });
         updatePersonalityTypeDisplay(basePersonalityType);
     }
-
+    const generatePersonalityImage = () => {
+        const filterFn = (node) => {
+            if (node.classList) {
+                if (node.classList.contains('personality-btns')) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        const fetchOptions = {
+            requestInit: {
+                mode: 'cors',
+            },
+            bypassingCache: true,
+        };
+        modernScreenshot.domToPng(document.querySelector("#mbti-container"), {
+            fetch: fetchOptions,
+            filter: filterFn,
+            scale: 2,
+            quality: 0.95,
+        }).then(dataUrl => {
+            const link = document.createElement('a');
+            link.download = `${currentPersonalityType.name}(${currentPersonalityType.type})-${Date.now()}.png`;
+            link.href = dataUrl;
+            link.click();
+        })
+    }
     const calculatePersonalityType = (mbtiDimensions) => {
         const type = mbtiDimensions.slice(0, 4).map(d => d.value[0] < 50 ? d.id[0].toUpperCase() : d.id[1].toUpperCase()).join('');
         const personalityType = personalityTypes.find(p => p.type === type);
@@ -158,15 +200,16 @@ function initializeMBTI(config) {
     };
 
 
-    const mbtiDimensions = getMBTIDimensions(config);
+    let mbtiDimensions = getMBTIDimensions(config);
     const baseMBTIDimensions = JSON.parse(JSON.stringify(mbtiDimensions));
     const container = document.getElementById('mbti-container');
-    const personalityType = calculatePersonalityType(mbtiDimensions);
-    const basePersonalityType = JSON.parse(JSON.stringify(personalityType));
-    container.innerHTML = createHeaderHTML(personalityType, config.slide) + getMBTIBars(mbtiDimensions);
+    let currentPersonalityType = calculatePersonalityType(mbtiDimensions);
+    const basePersonalityType = JSON.parse(JSON.stringify(currentPersonalityType));
+    container.innerHTML = createHeaderHTML(currentPersonalityType) + getMBTIBars(mbtiDimensions);
 
     initializeSliders(mbtiDimensions, config.slide);
     if (config.slide) {
-        document.getElementById('reset-mbti').addEventListener('click', () => resetMBTI());
+        document.getElementById('reset-mbti').addEventListener('click', resetMBTI);
     }
+    document.getElementById("download-mbti").addEventListener("click", generatePersonalityImage);
 }

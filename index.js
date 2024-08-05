@@ -24,6 +24,7 @@ if (config.cdn) {
 const linkTag = `<link href="${cssHref}" rel="stylesheet"/>`;
 const scriptTag = `<script src="${jsSrc}"></script>`;
 const dataScriptTag = `<script src="${dataJsSrc}"></script>`;
+const modernScreenshotScriptTag = `<script src="https://unpkg.com/modern-screenshot"></script>`;
 
 
 /**
@@ -33,17 +34,16 @@ const dataScriptTag = `<script src="${dataJsSrc}"></script>`;
 function insertToHtml(layout) {
     console.log('insertToHtml layout: ', layout);
     hexo.extend.generator.register("mbti-card", function(locals) {
-        console.log('insertToHtml option: ', config);
 
-        const mbtiContainer = `<div class="mbti-card" id="mbti-container" style="width: 600px;margin: 0 auto"></div>`
+        // const mbtiContainer = `<div class="mbti-card" id="mbti-container" style="width: 600px;margin: 0 auto"></div>`
 
-        const script = `
+        const mbtiContent = `
         <script>
+            const mbtiContainer = document.getElementById("mbti-container");
             console.log('personalityTypes: ', ${JSON.stringify(personalityTypes)})
             initializeMBTI(${JSON.stringify(config)});
         </script>
         `;
-        const mbtiContent = mbtiContainer + script;
         hexo.extend.injector.register(
             "body_end",
             mbtiContent,
@@ -53,6 +53,7 @@ function insertToHtml(layout) {
     hexo.extend.injector.register("head_begin", linkTag, layout);
     hexo.extend.injector.register("body_end", dataScriptTag, layout);
     hexo.extend.injector.register("body_end", scriptTag, layout);
+    hexo.extend.injector.register("body_end", modernScreenshotScriptTag, layout);
 }
 
 if (Array.isArray(config.layout)) {
