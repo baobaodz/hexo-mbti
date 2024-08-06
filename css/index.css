@@ -24,16 +24,21 @@
 }
 
 .personality-info {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
     width: 100%;
 }
 
-.personality-info div {
+.personality-info .personality-name {
+    display: inline-flex;
+    width: 100%;
     margin: 0;
     font-size: 24px;
     font-weight: bold;
 }
 
-.personality-info span {
+.personality-info .personality-desc {
     display: inline-flex;
     width: 100%;
     margin: 5px 0 0;
@@ -45,7 +50,14 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 20px;
+    margin: 20px;
+}
+
+.personality-btns svg:hover {
+    cursor: pointer;
+    path {
+        fill-opacity: 1;
+    }
 }
 
 .mbti-card {
@@ -91,6 +103,13 @@
 }
 
 @media (max-width: 768px) {
+    .mbti-header {
+        flex-direction: column;
+    }
+    .personality-info .personality-name,
+    .personality-info .personality-desc {
+        justify-content: center;
+    }
     .trait-container {
         flex-direction: row;
     }
@@ -122,6 +141,7 @@
     height: 15px;
     border-radius: 50%;
     background: var(--slider-color);
+    color: var(--slider-color);
     cursor: pointer;
     /* transition: background .2s; */
 }
