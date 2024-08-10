@@ -2,7 +2,7 @@
 
 一个用于在 Hexo 博客中展示 MBTI 性格测试结果的插件。
 
-![example-zh](D:\images\mbti\截图\example-zh.png)
+[![例图](https://s21.ax1x.com/2024/08/10/pAStFDx.png)](https://imgse.com/i/pAStFDx)
 
 
 
