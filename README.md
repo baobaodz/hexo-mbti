@@ -2,6 +2,20 @@
 
 一个用于在 Hexo 博客中展示 MBTI 性格测试结果的插件。
 
+![example-zh](D:\images\mbti\截图\example-zh.png)
+
+
+
+## 功能特性
+
+1. 展示 MBTI 性格类型结果
+2. 支持中英文切换
+3. 可选的滑动条交互功能
+4. 性格类型头像根据性别显示
+5. 可自定义颜色方案
+6. 支持重置功能
+7. 支持生成并下载 MBTI 卡片图片
+
 ## 安装
 
 ```bash
@@ -22,29 +36,44 @@ mbti_card:
   slide: true
   layout: "about"
   data:
-    'E-I': [40, 60]
-    'S-N': [20, 80]
-    'T-F': [20, 80]
-    'J-P': [20, 80]
-    'A-T': [20, 80]
+    'E-I': [35, 65]
+    'N-S': [59, 41]
+    'T-F': [45, 55]
+    'J-P': [62, 38]
+    'A-T': [57, 43]
   color: ["#4298b4", "#e4ae3a", "#33a474", "#88619a", "#f25e62"]
+  tooltip:
+    showTooltipBackground: false
+
 ```
 
 ## 配置说明
 
 ```html
 cdn: 是否使用 CDN 加载资源文件
-language: 语言设置,目前支持 'zh' (中文), 'en'(英文)
+language: 语言设置,支持 'zh' (中文) 和 'en' (英文)
 gender: 性别设置,可选 'male' 或 'female'
-slide: 是否启用滑动条交互
-layout: 插入 MBTI 卡片的页面位置，如'about','post'
-data: MBTI 各维度的得分数据
-color: MBTI 各维度的颜色设置
+slide: 是否启用滑动条交互功能
+layout: 插入 MBTI 卡片的页面位置,可以是单个页面如 'about',也可以是数组 ['about', 'post']
+data: MBTI 各维度的得分数据,格式为 [左侧特质得分, 右侧特质得分]
+color: MBTI 各维度的颜色设置,按 E-I, N-S, T-F, J-P, A-T 顺序
+tooltip: 工具提示配置
+	showTooltipBackground: 是否显示工具提示背景
 ```
+
+
 
 ## 使用
 
-配置完成后,插件会自动在指定的 layout 页面中插入 MBTI 性格测试结果卡片。
+配置完成后在需要展示的页面插入，用以挂载`mbti card`
+
+```html
+<div class="mbti-card" id="mbti-container">
+    <!--挂载mbti card-->    
+</div>
+```
+
+
 
 ## 许可证
 
