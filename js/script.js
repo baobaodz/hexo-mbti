@@ -1,4 +1,5 @@
 function initializeMBTI(config) {
+    console.log('config: ', config)
     const imagesHostUrl = 'https://cdn.jsdelivr.net/gh/baobaodz/picx-images-hosting@master/hexo-mbti'
     const createHeaderHTML = (personalityType) => {
         const resetButton = config.slide ?
@@ -21,7 +22,7 @@ function initializeMBTI(config) {
 
         return `
             <div class="mbti-header">
-                <div class="personality-avatar">
+                <div class="personality-avatar"> 
                     <img src="${personalityType.avatar}" alt="${personalityType.name}">
                 </div>
                 <div class="personality-info">
@@ -39,11 +40,10 @@ function initializeMBTI(config) {
 
     const createBarHTML = (dimension) => {
         return `
-          </div>
             <div class="trait-container">
                 <span class="trait-left">${dimension.label[0]}</span>
                 <div class="slider-container">
-                    <input type="range" min="0" max="100" value="${dimension.value[0]}" class="slider" id="${dimension.id}Slider" disabled>
+                    <input type="range" min="0" max="100" value="${dimension.value[1]}" class="slider" id="${dimension.id}Slider" disabled>
                     <div id="${dimension.id}SliderTooltip" class="slider-tooltip">
                         <span class="trait-value"></span>
                         <span class="percentage-value">%</span>
@@ -53,33 +53,70 @@ function initializeMBTI(config) {
             </div>
         `;
     }
+    const createFooterHTML = (personalityType) => {
+        const langConfig = {
+            prefix: { zh: 'ch/', en: '' },
+            suffix: { zh: '人格', en: 'personality' },
+            linkText: { zh: '查看性格剖析', en: 'View Detailed Personality Analysis' }
+        };
+
+        const baseUrl = 'https://www.16personalities.com/';
+        const lang = config.language || 'en';
+        const url = `${baseUrl}${langConfig.prefix[lang]}${personalityType.type.slice(0,4).toLowerCase()}-${langConfig.suffix[lang]}`;
+
+        return `
+            <div class="mbti-footer">
+                <span class="mbti-personality-link ">
+                    <a href="${url}" target="_blank">${langConfig.linkText[lang]}</a>
+                </span>
+            </div>
+        `;
+    }
+    const languageConfig = {
+        en: {
+            ei: ['Extraverted', 'Introverted'],
+            ns: ['Intuitive', 'Observant'],
+            tf: ['Thinking', 'Feeling'],
+            jp: ['Judging', 'Prospecting'],
+            at: ['Assertive', 'Turbulent']
+        },
+        zh: {
+            ei: ['外向', '内向'],
+            ns: ['有远见', '现实'],
+            tf: ['理性分析', '感受'],
+            jp: ['评判', '展望'],
+            at: ['坚决', '起伏不定']
+        }
+    };
 
     const getMBTIDimensions = (config) => {
+        const lang = config.language || 'en';
         return [
-            { id: 'ei', label: ['外向', '内向'], value: config.data['E-I'] || config.data['外向-内向'], color: config.color[0] },
-            { id: 'ns', label: ['有远见', '现实'], value: config.data['N-S'] || config.data['有远见-现实'], color: config.color[1] },
-            { id: 'tf', label: ['理性分析', '感受'], value: config.data['T-F'] || config.data['理性分析-感受'], color: config.color[2] },
-            { id: 'jp', label: ['评判', '展望'], value: config.data['J-P'] || config.data['评判-展望'], color: config.color[3] },
-            { id: 'at', label: ['坚决', '起伏不定'], value: config.data['A-T'] || config.data['坚决-起伏不定'], color: config.color[4] },
+            { id: 'ei', label: languageConfig[lang].ei, value: config.data['E-I'] || config.data[languageConfig[lang].ei.join('-')], color: config.color[0] },
+            { id: 'ns', label: languageConfig[lang].ns, value: config.data['N-S'] || config.data[languageConfig[lang].ns.join('-')], color: config.color[1] },
+            { id: 'tf', label: languageConfig[lang].tf, value: config.data['T-F'] || config.data[languageConfig[lang].tf.join('-')], color: config.color[2] },
+            { id: 'jp', label: languageConfig[lang].jp, value: config.data['J-P'] || config.data[languageConfig[lang].jp.join('-')], color: config.color[3] },
+            { id: 'at', label: languageConfig[lang].at, value: config.data['A-T'] || config.data[languageConfig[lang].at.join('-')], color: config.color[4] },
         ];
     }
 
-    const getMBTIBars = (mbtiDimensions) => {
-        return mbtiDimensions.map(createBarHTML).join('');
+
+    const getMBTIBars = (dimensions) => {
+        return dimensions.map(createBarHTML).join('');
     }
 
     const updateSliderDisplay = (value, dimension, slider, sliderTooltip) => {
-        console.log('offsetWidth: ', slider.offsetWidth)
-        const trait = value < 50 ? dimension.label[0] : dimension.label[1];
-        const percentage = value < 50 ? 100 - value : value;
+        const index = getDominantTraitIndex(value);
+        const trait = dimension.label[index];
+        const percentage = index ? value : 100 - value;
         sliderTooltip.querySelector('.trait-value').textContent = trait;
         sliderTooltip.querySelector('.percentage-value').textContent = `${percentage}%`;
         const position = (value / 100) * slider.offsetWidth;
         sliderTooltip.style.left = `${position}px`;
     }
 
-    const initializeSliders = (mbtiDimensions, isSlideEnabled) => {
-        mbtiDimensions.forEach(dimension => {
+    const initializeSliders = (dimensions, isSlideEnabled) => {
+        dimensions.forEach(dimension => {
             const slider = document.getElementById(`${dimension.id}Slider`);
             const sliderTooltip = document.getElementById(`${dimension.id}SliderTooltip`);
 
@@ -94,33 +131,37 @@ function initializeMBTI(config) {
 
     const applySliderStyles = (slider, sliderTooltip, color) => {
         slider.style.setProperty('--slider-color', color);
-        if (config.toolTip && config.toolTip.showTooltipBackground) {
+        if (config.tooltip && config.tooltip.showTooltipBackground) {
             sliderTooltip.style.setProperty('--slider-color', color);
         } else {
             sliderTooltip.style.setProperty('--slider-color', 'transparent');
             sliderTooltip.style.top = '-26px';
             sliderTooltip.querySelector('.trait-value').style.color = color;
             sliderTooltip.querySelector('.percentage-value').style.color = '#000';
+            sliderTooltip.classList.add('no-after');
+
+
         }
     }
 
     const enableSliderInteraction = (slider, dimension, sliderTooltip) => {
         slider.removeAttribute('disabled');
-        let lastType = dimension.value[0] > 50 ? 1 : 0;
+        let lastType = getDominantTraitIndex(dimension.value[0]);
         const debouncedUpdateSliderDisplay = debounce(updateSliderDisplay, 100);
         slider.addEventListener('input', (e) => {
             debouncedUpdateSliderDisplay(e.target.value, dimension, slider, sliderTooltip);
-            console.log(e.target.value);
             const index = mbtiDimensions.findIndex(d => d.id === dimension.id);
-            const newValue = parseInt(e.target.value);
-            mbtiDimensions[index].value[0] = newValue;
-            mbtiDimensions[index].value[1] = 100 - newValue;
+            const sliderValue = parseInt(e.target.value);
 
-            const currentType = newValue > 50 ? 1 : 0;
+            mbtiDimensions[index].value[0] = 100 - sliderValue;
+            mbtiDimensions[index].value[1] = sliderValue;
+
+            const currentType = getDominantTraitIndex(mbtiDimensions[index].value[0]);
             if (currentType !== lastType) {
                 lastType = currentType;
                 currentPersonalityType = calculatePersonalityType(mbtiDimensions);
                 updatePersonalityTypeDisplay(currentPersonalityType);
+                updatePersonalityLink(currentPersonalityType);
             }
         });
     }
@@ -147,6 +188,14 @@ function initializeMBTI(config) {
         `;
 
     }
+
+    function updatePersonalityLink(personalityType) {
+        const link = document.querySelector('.mbti-personality-link a');
+        link.href = link.href.replace(/\/[a-z]{4}-/, `/${personalityType.type.slice(0,4).toLowerCase()}-`);
+    }
+    const getDominantTraitIndex = (value) => {
+        return value > 50 ? 1 : 0;
+    }
     const getLocalizedContent = (content) => {
         return content[config.language];
     }
@@ -156,7 +205,7 @@ function initializeMBTI(config) {
         baseMBTIDimensions.forEach((dimension, index) => {
             const slider = document.getElementById(`${dimension.id}Slider`);
             const sliderTooltip = document.getElementById(`${dimension.id}SliderTooltip`);
-            const initialValue = dimension.value[0];
+            const initialValue = dimension.value[1];
             slider.value = initialValue;
             updateSliderDisplay(initialValue, dimension, slider, sliderTooltip);
         });
@@ -165,7 +214,7 @@ function initializeMBTI(config) {
     const generatePersonalityImage = () => {
         const filterFn = (node) => {
             if (node.classList) {
-                if (node.classList.contains('personality-btns')) {
+                if (node.classList.contains('personality-btns') || node.classList.contains('mbti-footer')) {
                     return false;
                 }
             }
@@ -189,8 +238,11 @@ function initializeMBTI(config) {
             link.click();
         })
     }
-    const calculatePersonalityType = (mbtiDimensions) => {
-        const type = mbtiDimensions.slice(0, 4).map(d => d.value[0] < 50 ? d.id[0].toUpperCase() : d.id[1].toUpperCase()).join('');
+    const calculatePersonalityType = (dimensions) => {
+        const type = dimensions
+            .slice(0, 4)
+            .map(d => d.id[getDominantTraitIndex(d.value[1])].toUpperCase())
+            .join('');
         const personalityType = personalityTypes.find(p => p.type === type);
 
         if (!personalityType) {
@@ -208,11 +260,10 @@ function initializeMBTI(config) {
             // avatar: personalityType.avatar[config.gender]
         }
 
-        if (mbtiDimensions.length > 4) {
-            const atDimension = mbtiDimensions[4].value[0] < 50 ? 'A' : 'T';
+        if (dimensions.length > 4) {
+            const atDimension = dimensions[4].value[0] < 50 ? 'A' : 'T';
             result.type += '-' + atDimension;
         }
-        console.log('Calculated Personality Type:', result);
         return result;
     };
 
@@ -220,9 +271,12 @@ function initializeMBTI(config) {
     let mbtiDimensions = getMBTIDimensions(config);
     const baseMBTIDimensions = JSON.parse(JSON.stringify(mbtiDimensions));
     const container = document.getElementById('mbti-container');
+    container.setAttribute('lang', config.language);
     let currentPersonalityType = calculatePersonalityType(mbtiDimensions);
     const basePersonalityType = JSON.parse(JSON.stringify(currentPersonalityType));
-    container.innerHTML = createHeaderHTML(currentPersonalityType) + getMBTIBars(mbtiDimensions);
+    container.innerHTML = createHeaderHTML(currentPersonalityType) +
+        getMBTIBars(mbtiDimensions) +
+        createFooterHTML(currentPersonalityType);
 
     initializeSliders(mbtiDimensions, config.slide);
     if (config.slide) {
@@ -231,6 +285,7 @@ function initializeMBTI(config) {
     document.getElementById("download-mbti").addEventListener("click", generatePersonalityImage);
     const throttledUpdateAllTooltipPositions = throttle(updateAllTooltipPositions, 100);
     window.addEventListener('resize', throttledUpdateAllTooltipPositions);
+
 
 }
 
