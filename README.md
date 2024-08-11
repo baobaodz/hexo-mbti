@@ -15,6 +15,7 @@
 5. 可自定义颜色方案
 6. 支持重置功能
 7. 支持生成并下载 MBTI 卡片图片
+8. 支持多种卡片类型: 详细(detailed)、简要(brief)和气泡(bubble)
 
 ## 安装
 
@@ -30,31 +31,43 @@ npm install hexo-mbti --save
 
 ```yaml
 mbti_card:
-  cdn: false
   language: 'zh'
   gender: 'male'
-  slide: true
-  layout: "about"
-  data:
-    'E-I': [35, 65]
-    'N-S': [59, 41]
-    'T-F': [45, 55]
-    'J-P': [62, 38]
-    'A-T': [57, 43]
-  color: ["#4298b4", "#e4ae3a", "#33a474", "#88619a", "#f25e62"]
-  tooltip:
-    showTooltipBackground: false
+  cdn: false
+  cards:
+    - cardType: 'detailed'
+      enable: true
+      layout: "about"
+      slide: true
+      data:
+        'E-I': [35, 65]
+        'N-S': [59, 41]
+        'T-F': [45, 55]
+        'J-P': [62, 38]
+        'A-T': [57, 43]
+      color: ["#4298b4", "#e4ae3a", "#33a474", "#88619a", "#f25e62"]
+      tooltip:
+        showTooltipBackground: false
+
+    - cardType: 'brief'
+      enable: false
+      layout: "about"
+
+    - cardType: 'bubble'
+      enable: false
+      layout: "about"
+      size: 'small'
 
 ```
 
 ## 配置说明
 
-```html
-cdn: 是否使用 CDN 加载资源文件
-language: 语言设置,支持 'zh' (中文) 和 'en' (英文)
-gender: 性别设置,可选 'male' 或 'female'，性别不同，头像也不同
-slide: 是否启用滑动条交互功能，如果启用了slide功能,用户可以通过滑动来调整各维度的得分，调整得分会实时更新人格类型的显示
-layout: 插入 MBTI 卡片的页面位置,可以是单个页面如 'about',也可以是数组 ['about', 'post']
+#### 1、详细卡片(detailed)
+
+```yml
+enable: 是否启用该卡片
+layout: 插入卡片的页面位置
+slide: 是否启用滑动条交互功能，启用slide功能,可调整各维度的数值，实时更新人格类型的显示
 data: MBTI 各维度的得分数据,格式为 [左侧特质得分, 右侧特质得分]
 	data配置支持两种格式:
 		1、使用英文标签: 'E-I', 'N-S', 'T-F', 'J-P', 'A-T'
@@ -72,18 +85,36 @@ data: MBTI 各维度的得分数据,格式为 [左侧特质得分, 右侧特质�
 				'评判-展望'
 				'坚决-起伏不定'
 color: MBTI 各维度的颜色设置,按 E-I, N-S, T-F, J-P, A-T 顺序
-tooltip: 提示配置
-	showTooltipBackground: 是否显示提示背景
+tooltip: 工具提示配置
+	showTooltipBackground: 是否显示工具提示背景
 ```
 
+#### 2、简要卡片 (brief)
 
+```yaml
+enable: 是否启用该卡片
+layout: 插入卡片的页面位置
+```
+
+#### 3、气泡卡片 (bubble)
+
+```yaml
+enable: 是否启用该卡片
+layout: 插入卡片的页面位置
+size: 气泡大小,可选 'small', 'medium', 'large'
+```
 
 ## 使用
 
-配置完成后在需要展示的页面插入以下代码，用以挂载`mbti card`
+配置完成后在需要展示的页面插入以下代码，用以挂载`mbti card`，类型不同，容器id也不同。例如：
 
 ```html
-<div class="mbti-card" id="mbti-container">
+<!--detailed-->  
+<div class="mbti-card" id="mbti-detailed-container">
+    <!--挂载mbti card-->    
+</div>
+<!--brief-->  
+<div class="mbti-card" id="mbti-brief-container">
     <!--挂载mbti card-->    
 </div>
 ```
