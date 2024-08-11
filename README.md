@@ -52,20 +52,35 @@ mbti_card:
 ```html
 cdn: 是否使用 CDN 加载资源文件
 language: 语言设置,支持 'zh' (中文) 和 'en' (英文)
-gender: 性别设置,可选 'male' 或 'female'
-slide: 是否启用滑动条交互功能
+gender: 性别设置,可选 'male' 或 'female'，性别不同，头像也不同
+slide: 是否启用滑动条交互功能，如果启用了slide功能,用户可以通过滑动来调整各维度的得分，调整得分会实时更新人格类型的显示
 layout: 插入 MBTI 卡片的页面位置,可以是单个页面如 'about',也可以是数组 ['about', 'post']
 data: MBTI 各维度的得分数据,格式为 [左侧特质得分, 右侧特质得分]
+	data配置支持两种格式:
+		1、使用英文标签: 'E-I', 'N-S', 'T-F', 'J-P', 'A-T'
+		2、使用本地化标签: 根据language设置使用对应语言的标签，如
+			对于英文(language: 'en'):
+				'Extraverted-Introverted'
+				'Intuitive-Observant'
+				'Thinking-Feeling'
+				'Judging-Prospecting'
+				'Assertive-Turbulent'
+			对于中文(language: 'zh'):
+				'外向-内向'
+				'有远见-现实'
+				'理性分析-感受'
+				'评判-展望'
+				'坚决-起伏不定'
 color: MBTI 各维度的颜色设置,按 E-I, N-S, T-F, J-P, A-T 顺序
-tooltip: 工具提示配置
-	showTooltipBackground: 是否显示工具提示背景
+tooltip: 提示配置
+	showTooltipBackground: 是否显示提示背景
 ```
 
 
 
 ## 使用
 
-配置完成后在需要展示的页面插入，用以挂载`mbti card`
+配置完成后在需要展示的页面插入以下代码，用以挂载`mbti card`
 
 ```html
 <div class="mbti-card" id="mbti-container">
