@@ -64,7 +64,7 @@ mbti_card:
 
 #### 1、详细卡片(detailed)
 
-```yml
+```html
 enable: 是否启用该卡片
 layout: 插入卡片的页面位置
 slide: 是否启用滑动条交互功能，启用slide功能,可调整各维度的数值，实时更新人格类型的显示
@@ -91,14 +91,14 @@ tooltip: 工具提示配置
 
 #### 2、简要卡片 (brief)
 
-```yaml
+```html
 enable: 是否启用该卡片
 layout: 插入卡片的页面位置
 ```
 
 #### 3、气泡卡片 (bubble)
 
-```yaml
+```html
 enable: 是否启用该卡片
 layout: 插入卡片的页面位置
 size: 气泡大小,可选 'small', 'medium', 'large'
