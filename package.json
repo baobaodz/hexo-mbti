@@ -1,6 +1,6 @@
 {
     "name": "hexo-mbti",
-    "version": "1.0.2",
+    "version": "1.2.0",
     "description": "mbti",
     "main": "index.js",
     "scripts": {

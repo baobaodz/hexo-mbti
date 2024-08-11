@@ -1,66 +1,84 @@
-// 引入依赖
-const fs = require('fs');
 const path = require('path');
-
 const pkg = require("./package.json");
 const config = require("./lib/config")(hexo);
 const copyFile = require("./lib/utils").copyFile.bind(hexo);
-const { personalityTypes } = require('./js/data');
 
+const resourcePathsCache = new Map();
 
-let cssHref = `/css/${pkg.name}.css`;
-let jsSrc = `/js/${pkg.name}.js`;
-let dataJsSrc = `/js/${pkg.name}-data.js`
-if (config.cdn) {
-    cssHref = `https://cdn.jsdelivr.net/npm/${pkg.name}@${pkg.version}/css/index.css`;
-    jsSrc = `https://cdn.jsdelivr.net/npm/${pkg.name}@${pkg.version}/js/index.js`;
-    dataJsSrc = `https://cdn.jsdelivr.net/npm/${pkg.name}@${pkg.version}/js/data.js`;
-} else {
-    copyFile(`${pkg.name}-css`, cssHref, path.join(__dirname, "./css/index.css"));
-    copyFile(`${pkg.name}-js`, jsSrc, path.join(__dirname, "./js/script.js"));
-    copyFile(`${pkg.name}-data-js`, dataJsSrc, path.join(__dirname, "./js/data.js"));
+function getResourcePaths(cardConfig) {
+    const cacheKey = `${cardConfig.cardType}-${cardConfig.cdn}`;
+    if (resourcePathsCache.has(cacheKey)) {
+        return resourcePathsCache.get(cacheKey);
+    }
+    const cssHref = cardConfig.cdn ? `https://cdn.jsdelivr.net/npm/${pkg.name}@${pkg.version}/css/${cardConfig.cardType}.css` : `/css/${pkg.name}-${cardConfig.cardType}.css`;
+    const jsSrc = cardConfig.cdn ? `https://cdn.jsdelivr.net/npm/${pkg.name}@${pkg.version}/js/${cardConfig.cardType}.js` : `/js/${pkg.name}-${cardConfig.cardType}.js`;
+    const result = { cssHref, jsSrc };
+    resourcePathsCache.set(cacheKey, result);
+    return result;
 }
 
-const linkTag = `<link href="${cssHref}" rel="stylesheet"/>`;
-const scriptTag = `<script src="${jsSrc}"></script>`;
-const dataScriptTag = `<script src="${dataJsSrc}"></script>`;
-const modernScreenshotScriptTag = `<script src="https://unpkg.com/modern-screenshot"></script>`;
+
+async function copyResources(cardConfig) {
+    try {
+        if (!cardConfig.cdn) {
+            const cssPath = `/css/${pkg.name}-${cardConfig.cardType}.css`;
+            const jsPath = `/js/${pkg.name}-${cardConfig.cardType}.js`;
+            await Promise.all([
+                copyFile(`${pkg.name}-${cardConfig.cardType}-css`, cssPath, path.join(__dirname, `./css/${cardConfig.cardType}.css`)),
+                copyFile(`${pkg.name}-${cardConfig.cardType}-js`, jsPath, path.join(__dirname, `./js/${cardConfig.cardType}.js`))
+            ]);
+            if (cardConfig.cardType === 'detailed') {
+                const dataJsPath = `/js/${pkg.name}-${cardConfig.cardType}-data.js`;
+                await copyFile(`${pkg.name}-${cardConfig.cardType}-data-js`, dataJsPath, path.join(__dirname, `./js/${cardConfig.cardType}-data.js`));
+            }
+        }
+    } catch (error) {
+        console.error(`Error copying resources: ${error.message}`);
+    }
+}
 
 
-
-/**
- * 插入 html 页面
- * @param {string} layout
- */
-function insertToHtml(layout) {
-    console.log('insertToHtml layout: ', layout);
-    hexo.extend.generator.register("mbti-card", function(locals) {
-
-        // const mbtiContainer = `<div class="mbti-card" id="mbti-container" style="width: 600px;margin: 0 auto"></div>`
-
-        const mbtiContent = `
+function generateCardContent(cardConfig) {
+    const { cssHref, jsSrc } = getResourcePaths(cardConfig);
+    const linkTag = `<link href="${cssHref}" rel="stylesheet"/>`;
+    const scriptTag = `<script src="${jsSrc}"></script>`;
+    let dataScriptTag = '';
+    if (cardConfig.cardType === 'detailed') {
+        const dataJsSrc = cardConfig.cdn ? `https://cdn.jsdelivr.net/npm/${pkg.name}@${pkg.version}/js/data.js` : `/js/${pkg.name}-${cardConfig.cardType}-data.js`;
+        dataScriptTag = `<script src="${dataJsSrc}"></script>`;
+    }
+    const initScript = `
         <script>
-            const mbtiContainer = document.getElementById("mbti-container");
-            console.log('personalityTypes: ', ${JSON.stringify(personalityTypes)})
-            initializeMBTI(${JSON.stringify(config)});
+            initialize${cardConfig.cardType.charAt(0).toUpperCase() + cardConfig.cardType.slice(1)}MBTI(${JSON.stringify(cardConfig)});
         </script>
-        `;
-        hexo.extend.injector.register(
-            "body_end",
-            mbtiContent,
-            layout
-        );
-    });
-    hexo.extend.injector.register("head_begin", linkTag, layout);
-    hexo.extend.injector.register("body_end", dataScriptTag, layout);
-    hexo.extend.injector.register("body_end", scriptTag, layout);
-    hexo.extend.injector.register("body_end", modernScreenshotScriptTag, layout);
+    `;
+    return { linkTag, scriptTag, dataScriptTag, initScript };
 }
 
-if (Array.isArray(config.layout)) {
-    config.layout.forEach((layout) => {
-        insertToHtml(layout);
+
+function insertToHtml(layout) {
+    hexo.extend.generator.register("mbti-card", function(locals) {
+        config.cards.forEach((cardConfig, index) => {
+            const { linkTag, scriptTag, dataScriptTag, initScript } = generateCardContent(cardConfig);
+            hexo.extend.injector.register("head_end", linkTag, layout);
+            hexo.extend.injector.register("body_end", scriptTag, layout);
+            if (dataScriptTag) {
+                hexo.extend.injector.register("body_end", dataScriptTag, layout);
+            }
+            hexo.extend.injector.register("body_end", initScript, layout);
+        });
     });
-} else {
-    insertToHtml(config.layout);
+
+    // 注入公共脚本
+    hexo.extend.injector.register("body_end", `<script src="https://unpkg.com/modern-screenshot"></script>`, layout);
 }
+hexo.extend.filter.register('after_init', () => {
+    config.cards.forEach(cardConfig => {
+        copyResources(cardConfig);
+    });
+});
+
+const layouts = [...new Set(config.cards.map(card => card.layout))];
+layouts.forEach(layout => {
+    insertToHtml(layout);
+});

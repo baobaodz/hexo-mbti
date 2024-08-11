@@ -1,4 +1,4 @@
-function initializeMBTI(config) {
+function initializeDetailedMBTI(config) {
     console.log('config: ', config)
     const imagesHostUrl = 'https://cdn.jsdelivr.net/gh/baobaodz/picx-images-hosting@master/hexo-mbti'
     const createHeaderHTML = (personalityType) => {
@@ -226,7 +226,7 @@ function initializeMBTI(config) {
             },
             bypassingCache: true,
         };
-        modernScreenshot.domToPng(document.querySelector("#mbti-container"), {
+        modernScreenshot.domToPng(document.querySelector(`#${containerId}`), {
             fetch: fetchOptions,
             filter: filterFn,
             scale: 2,
@@ -267,10 +267,10 @@ function initializeMBTI(config) {
         return result;
     };
 
-
+    const containerId = `mbti-${config.cardType}-container`;
     let mbtiDimensions = getMBTIDimensions(config);
     const baseMBTIDimensions = JSON.parse(JSON.stringify(mbtiDimensions));
-    const container = document.getElementById('mbti-container');
+    const container = document.getElementById(containerId);
     container.setAttribute('lang', config.language);
     let currentPersonalityType = calculatePersonalityType(mbtiDimensions);
     const basePersonalityType = JSON.parse(JSON.stringify(currentPersonalityType));
