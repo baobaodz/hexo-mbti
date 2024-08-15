@@ -71,6 +71,7 @@ function insertToHtml(layout) {
 
     // 注入公共脚本
     hexo.extend.injector.register("body_end", `<script src="https://unpkg.com/modern-screenshot"></script>`, layout);
+    hexo.extend.injector.register("body_end", `<script src="https://cdn.jsdelivr.net/npm/lottie-web@5.12.2/build/player/lottie.min.js"></script>`, layout);
 }
 hexo.extend.filter.register('after_init', () => {
     config.cards.forEach(cardConfig => {
