@@ -8,15 +8,6 @@ function initializeBriefMBTI(config) {
                     <button class="mbti-nav-button next">&gt;</button>
                 </div>
             ` : '';
-        const langConfig = {
-            prefix: { zh: 'ch/', en: '' },
-            suffix: { zh: '人格', en: 'personality' },
-            linkText: { zh: '查看更多', en: 'View More' }
-        };
-
-        const baseUrl = 'https://www.16personalities.com/';
-        const lang = config.language || 'en';
-        const url = `${baseUrl}${langConfig.prefix[lang]}${personalityType.type.slice(0,4).toLowerCase()}-${langConfig.suffix[lang]}`;
 
         const briefHTML = `
             <div id="mbti-brief-wrapper">
@@ -31,11 +22,11 @@ function initializeBriefMBTI(config) {
                     <div class="mbti-brief-desc">${personalityType.desc}</div>
                 </div>
                 <div class="mbti-brief-footer">
-                    <span class="mbti-more-button" style="background-color: ${personalityType.characterColor};">
-                        <a href="${url}" target="_blank">${langConfig.linkText[lang]}</a>
+                    <span class="mbti-more-button">
+                        <a href="${getMoreInfoLink(personalityType)}" target="_blank">${langConfig.linkText[config.language]}</a>
                     </span>
                 </div>
-                <div class="mbti-brief-card-bg" style="background-color: ${personalityType.characterColor};">
+                <div class="mbti-brief-card-bg">
                     <svg height="30" viewBox="0 0 399 30" width="100%" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" class="angular-380-connected-1 svg--connected">
                         <path d="M400 0v16L326.316 5 94.736 20 0 0z" fill="${personalityType.characterColor}" fill-rule="evenodd">
                         </path>
@@ -62,6 +53,11 @@ function initializeBriefMBTI(config) {
             jp: ['评判', '展望'],
             at: ['坚决', '起伏不定']
         }
+    };
+    const langConfig = {
+        prefix: { zh: 'ch/', en: '' },
+        suffix: { zh: '人格', en: 'personality' },
+        linkText: { zh: '查看更多', en: 'View More' }
     };
     const getLocalizedContent = (content) => {
         return content[config.language];
@@ -129,6 +125,7 @@ function initializeBriefMBTI(config) {
             .then(response => response.json())
             .then(animationData => {
                 container.innerHTML = '';
+                container.style.minHeight = '100%';
                 const animation = lottie.loadAnimation({
                     container: container,
                     renderer: 'svg',
@@ -154,19 +151,27 @@ function initializeBriefMBTI(config) {
     }
 
     const getCurrentPersonalityType = (personalityType) => {
+        const characterColor = getFillColor(personalityType);
+        container.style.setProperty('--character-color', characterColor);
         return {
             type: personalityType.type,
             name: getLocalizedContent(personalityType.name),
             desc: getLocalizedContent(personalityType.desc),
-            characterColor: getFillColor(personalityType),
+            characterColor: characterColor,
             imgUrl: `${imagesHostUrl}/avatars/classic/${personalityType.name.en.toLowerCase()}.json`,
         };
+
+    }
+    const getMoreInfoLink = (personalityType) => {
+        const lang = config.language || 'en';
+        return `${baseUrl}/${langConfig.prefix[lang]}${personalityType.type.slice(0,4).toLowerCase()}-${langConfig.suffix[lang]}`;
 
     }
     const containerId = `mbti-${config.cardType}-container`;
     const container = document.getElementById(containerId);
     container.setAttribute('lang', config.language);
     const imagesHostUrl = 'https://cdn.jsdelivr.net/gh/baobaodz/picx-images-hosting@master/hexo-mbti';
+    const baseUrl = 'https://www.16personalities.com';
     let mbtiDimensions = [];
     let baseMBTIDimensions = [];
     let currentPersonalityType = {};
@@ -186,15 +191,19 @@ function initializeBriefMBTI(config) {
         }
     }
     const personalityType = personalityTypes.find(p => p.type === currentPersonalityType.type.slice(0, 4));
+    const characterColor = getFillColor(personalityType);
+    container.style.setProperty('--character-color', characterColor);
     currentPersonalityType = {
         ...currentPersonalityType,
-        characterColor: getFillColor(currentPersonalityType),
+        characterColor: characterColor,
         imgUrl: `${imagesHostUrl}/avatars/classic/${personalityType.name.en.toLowerCase()}.json`,
     }
     basePersonalityType = JSON.parse(JSON.stringify(currentPersonalityType));
 
+
     container.innerHTML = createHTML(currentPersonalityType);
     const briefImageContainer = document.querySelector('.mbti-brief-image');
+    briefImageContainer.style.minHeight = '200px';
     loadLottieAnimation(currentPersonalityType, briefImageContainer);
 
     if (config.slide) {
@@ -207,39 +216,29 @@ function initializeBriefMBTI(config) {
                 const backgroundElement = document.querySelector('.mbti-brief-card-bg');
                 const isNext = button.classList.contains('next');
 
-                // 设置当前图片的移出动画
                 briefImageContainer.classList.add(isNext ? 'slide-out-left' : 'slide-out-right');
                 setTimeout(() => {
-                    // 更新人格类型
                     currentIndex = (currentIndex + (isNext ? 1 : -1) + personalityTypes.length) % personalityTypes.length;
                     currentPersonalityType = getCurrentPersonalityType(personalityTypes[currentIndex]);
 
-                    // 动态更新HTML元素
                     wrapper.querySelector('.mbti-brief-personality-name').textContent = `${currentPersonalityType.name} (${currentPersonalityType.type})`;
                     wrapper.querySelector('.mbti-brief-desc').textContent = currentPersonalityType.desc;
 
-                    // 创建新的图片容器
                     const newImageContainer = briefImageContainer.cloneNode(true);
                     newImageContainer.classList.remove('slide-out-left', 'slide-out-right');
                     newImageContainer.classList.add(isNext ? 'slide-in-right' : 'slide-in-left');
-
-                    // 替换旧的图片容器
                     briefImageContainer.parentNode.replaceChild(newImageContainer, briefImageContainer);
 
-                    // 触发重排并开始新的动画
                     void newImageContainer.offsetWidth;
                     newImageContainer.classList.remove('slide-in-right', 'slide-in-left');
 
-                    // 加载新的动画
                     loadLottieAnimation(currentPersonalityType, newImageContainer);
 
-                    // 背景渐入效果
                     backgroundElement.style.backgroundColor = currentPersonalityType.characterColor;
                     backgroundElement.querySelector('svg path').setAttribute('fill', currentPersonalityType.characterColor);
 
-                    // 更新"查看更多"按钮
                     const moreButton = wrapper.querySelector('.mbti-more-button');
-                    moreButton.href = `https://www.16personalities.com/${currentPersonalityType.type.toLowerCase()}-personality`;
+                    moreButton.href = getMoreInfoLink(currentPersonalityType);
                     moreButton.style.backgroundColor = currentPersonalityType.characterColor;
                 }, 500);
             };
