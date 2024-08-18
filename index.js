@@ -23,9 +23,11 @@ async function copyResources(cardConfig) {
         if (!cardConfig.cdn) {
             const cssPath = `/css/${pkg.name}-${cardConfig.cardType}.css`;
             const jsPath = `/js/${pkg.name}-${cardConfig.cardType}.js`;
+
             await Promise.all([
                 copyFile(`${pkg.name}-${cardConfig.cardType}-css`, cssPath, path.join(__dirname, `./css/${cardConfig.cardType}.css`)),
-                copyFile(`${pkg.name}-${cardConfig.cardType}-js`, jsPath, path.join(__dirname, `./js/${cardConfig.cardType}.js`))
+                copyFile(`${pkg.name}-${cardConfig.cardType}-js`, jsPath, path.join(__dirname, `./js/${cardConfig.cardType}.js`)),
+
             ]);
             if (cardConfig.cardType === 'detailed') {
                 const dataJsPath = `/js/${pkg.name}-${cardConfig.cardType}-data.js`;

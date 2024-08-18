@@ -1,3 +1,13 @@
+.card-flipper {
+    perspective: 1000px;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+}
+
+.card-flipper.flipping {
+    transform: rotateY(180deg);
+}
+
 #mbti-brief-wrapper {
     display: flex;
     flex-direction: column;
@@ -12,6 +22,7 @@
     transition: box-shadow 0.3s ease-in-out;
     cursor: pointer;
     font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei";
+    backface-visibility: hidden;
 }
 
 #mbti-brief-wrapper:hover {
@@ -20,8 +31,21 @@
 }
 
 .mbti-brief-header,
-.mbti-brief-body {
+.mbti-brief-body,
+.mbti-brief-footer,
+.mbti-style-switch {
     z-index: 2;
+}
+
+.mbti-style-switch {
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+
+#styleSwitchBtn {
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
 }
 
 .mbti-brief-header {
@@ -39,13 +63,26 @@
     font-weight: bold;
 }
 
-.mbti-brief-image {
+.mbti-brief-image-container {
+    display: flex;
+    justify-content: center;
+    align-items: end;
     padding: 20px;
     object-fit: contain;
     width: 90%;
     height: auto;
     min-height: 200px;
+    position: relative;
+    overflow: hidden;
+    mask-image: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.2) 10%, rgba(0, 0, 0, 0.2) 90%, transparent), linear-gradient(to bottom, transparent, rgba(0, 0, 0, 0.2) 10%, rgba(0, 0, 0, 0.2) 90%, transparent), linear-gradient(to left, transparent, rgba(0, 0, 0, 0.2) 10%, rgba(0, 0, 0, 0.2) 90%, transparent), linear-gradient(to top, transparent, rgba(0, 0, 0, 0.2) 10%, rgba(0, 0, 0, 0.2) 90%, transparent);
+    -webkit-mask-composite: destination-out;
+    /* Safari/Chrome specific */
+    mask-composite: exclude;
+    clip-path: inset(0);
+    /* 保证后续的mask生效 */
 }
+
+.mbti-brief-image {}
 
 .mbti-brief-desc {
     font-size: 12px;
@@ -55,6 +92,7 @@
 .mbti-brief-footer {
     width: 100%;
     display: flex;
+    justify-content: space-between;
     margin-top: 12px;
 }
 
@@ -81,7 +119,7 @@
     overflow: visible;
     display: flex;
     flex-direction: column;
-    padding-top: 50%;
+    height: 95%;
     border-radius: 8px;
     position: absolute;
     top: 0;
@@ -93,8 +131,8 @@
 
 .mbti-brief-card-bg:before {
     content: "";
-    position: absolute;
-    top: 0;
+    /* position: absolute;
+    top: 0; */
     width: 100%;
     height: 100%;
     border-radius: 9px 9px 0 0;
@@ -123,7 +161,7 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background-color: rgba(255, 255, 255, 0.7);
+    background-color: transparent;
     border: none;
     border-radius: 50%;
     width: 40px;

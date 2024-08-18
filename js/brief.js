@@ -2,39 +2,48 @@ function initializeBriefMBTI(config) {
 
     const createHTML = (personalityType) => {
 
-        const sildeButton = config.slide ? `
+        const sildeButton = config.interaction.slide ? `
               <div class="mbti-nav-buttons">
                     <button class="mbti-nav-button prev">&lt;</button>
                     <button class="mbti-nav-button next">&gt;</button>
                 </div>
             ` : '';
-
+        const styleSwitchButton = config.interaction.switch ? `
+            <div class="mbti-style-switch">
+                <svg id="styleSwitchBtn" t="1723948319032" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="25040" width="32" height="32">
+                    <path d="M514 114.3c-219.9 0-398.9 178.9-398.9 398.8 0.1 220 179 398.9 398.9 398.9 219.9 0 398.8-178.9 398.8-398.8S733.9 114.3 514 114.3z m218.3 489v1.7c0 0.5-0.1 1-0.1 1.6 0 0.3 0 0.6-0.1 0.9 0 0.5-0.1 1-0.2 1.5 0 0.3-0.1 0.7-0.1 1-0.1 0.4-0.1 0.8-0.2 1.2-0.1 0.4-0.2 0.9-0.2 1.3-0.1 0.3-0.1 0.6-0.2 0.8-0.1 0.6-0.3 1.2-0.4 1.8 0 0.1-0.1 0.2-0.1 0.3-2.2 8.5-6.6 16.6-13.3 23.3L600.7 755.4c-20 20-52.7 20-72.6 0-20-20-20-52.7 0-72.6l28.9-28.9H347c-28.3 0-51.4-23.1-51.4-51.4 0-28.3 23.1-51.4 51.4-51.4h334c13.2 0 26.4 5 36.4 15s15 23.2 15 36.4c0 0.3-0.1 0.6-0.1 0.8z m0.1-179.5c0 28.3-23.1 51.4-51.4 51.4H347c-13.2 0-26.4-5-36.4-15s-15-23.2-15-36.4v-0.8-1.6c0-0.5 0.1-1.1 0.1-1.6 0-0.3 0-0.6 0.1-0.9 0-0.5 0.1-1 0.2-1.5 0-0.3 0.1-0.7 0.1-1 0.1-0.4 0.1-0.8 0.2-1.2 0.1-0.4 0.2-0.9 0.2-1.3 0.1-0.3 0.1-0.6 0.2-0.8 0.1-0.6 0.3-1.2 0.4-1.8 0-0.1 0.1-0.2 0.1-0.3 2.2-8.5 6.6-16.6 13.3-23.3l116.6-116.6c20-20 52.7-20 72.6 0 20 20 20 52.7 0 72.6L471 372.5h210c28.2 0 51.4 23.1 51.4 51.3z" fill="${personalityType.characterColor}" p-id="25041"></path>
+                </svg>
+            </div>
+        ` : '';
         const briefHTML = `
-            <div id="mbti-brief-wrapper">
-
+            ${config.interaction.switch ? '<div class="card-flipper">' : ''}
+            <div id="mbti-brief-wrapper" data-style="${config.style}">
+                
                 <div class="mbti-brief-header">
                     <div class="mbti-brief-personality-name">
                         ${personalityType.name} (${personalityType.type})
                     </div>
                 </div>
                 <div class="mbti-brief-body">
-                    <div class="mbti-brief-image slide-transition"></div>
+                    <div class="mbti-brief-image-container slide-transition">
+                    </div>
                     <div class="mbti-brief-desc">${personalityType.desc}</div>
                 </div>
                 <div class="mbti-brief-footer">
                     <span class="mbti-more-button">
                         <a href="${getMoreInfoLink(personalityType)}" target="_blank">${langConfig.linkText[config.language]}</a>
                     </span>
+                    ${styleSwitchButton}
                 </div>
                 <div class="mbti-brief-card-bg">
-                    <svg height="30" viewBox="0 0 399 30" width="100%" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" class="angular-380-connected-1 svg--connected">
+                    <svg height="30" viewBox="0 0 399 30" width="100%" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M400 0v16L326.316 5 94.736 20 0 0z" fill="${personalityType.characterColor}" fill-rule="evenodd">
                         </path>
                     </svg>
                 </div>
                 ${sildeButton}
             </div>
-
+            ${config.interaction.switch ? '</div>' : ''}
         `;
         return briefHTML;
     }
@@ -158,15 +167,84 @@ function initializeBriefMBTI(config) {
             name: getLocalizedContent(personalityType.name),
             desc: getLocalizedContent(personalityType.desc),
             characterColor: characterColor,
-            imgUrl: `${imagesHostUrl}/avatars/classic/${personalityType.name.en.toLowerCase()}.json`,
+            imgUrl: getAvatarImgUrl(getCurrentStyle(), personalityType),
         };
 
+    }
+    const getCurrentStyle = () => {
+        const wrapper = document.getElementById('mbti-brief-wrapper');
+        return wrapper.dataset.style;
     }
     const getMoreInfoLink = (personalityType) => {
         const lang = config.language || 'en';
         return `${baseUrl}/${langConfig.prefix[lang]}${personalityType.type.slice(0,4).toLowerCase()}-${langConfig.suffix[lang]}`;
 
     }
+
+    const avatarConfigs = [{
+            style: 'classic',
+            author: 'Sourcegraph',
+            imgSuffix: 'json',
+            getImgUrl: (personalityType) => `${imagesHostUrl}/avatars/classic/${personalityType.name.en.toLowerCase()}.json`
+        },
+        {
+            style: 'illustration',
+            author: 'Sourcegraph',
+            imgSuffix: 'jpg',
+            getImgUrl: (personalityType) => `${imagesHostUrl}/avatars/illustration/${personalityType.type.slice(0, 4).toLowerCase()}.jpg`
+        }
+    ];
+    const getAvatarImgUrl = (style, personalityType) => {
+        const avatarConfig = avatarConfigs.find(item => item.style === style);
+        return avatarConfig ? avatarConfig.getImgUrl(personalityType) : null;
+    }
+    const switchStyle = () => {
+        const wrapper = document.getElementById('mbti-brief-wrapper');
+        const flipper = document.querySelector('.card-flipper');
+        flipper.classList.add('flipping');
+
+        const styles = ['classic', 'illustration'];
+        const currentIndex = styles.indexOf(wrapper.dataset.style);
+        const newIndex = (currentIndex + 1) % styles.length;
+        const personalityType = personalityTypes.find(p => p.type === currentPersonalityType.type.slice(0, 4));
+        wrapper.dataset.style = styles[newIndex];
+        currentPersonalityType = {
+            ...currentPersonalityType,
+            imgUrl: getAvatarImgUrl(wrapper.dataset.style, personalityType),
+        };
+        setTimeout(() => {
+            loadCardContent(currentPersonalityType, wrapper.dataset.style);
+            flipper.classList.remove('flipping');
+        }, 300);
+    }
+    const loadCardContent = (personalityType, style) => {
+        const briefImageContainer = document.querySelector('.mbti-brief-image-container');
+
+
+        if (style === 'classic') {
+            loadLottieAnimation(personalityType, briefImageContainer);
+        } else if (style === 'illustration') {
+            briefImageContainer.innerHTML = '';
+            const backgroundElement = document.querySelector('.mbti-brief-card-bg');
+            const isNext = true;
+            briefImageContainer.classList.add(isNext ? 'slide-out-left' : 'slide-out-right');
+            setTimeout(() => {
+
+                briefImageContainer.classList.remove(isNext ? 'slide-out-left' : 'slide-out-right');
+                briefImageContainer.classList.add(isNext ? 'slide-out-right' : 'slide-out-left');
+                setTimeout(() => {
+                    briefImageContainer.classList.remove(isNext ? 'slide-out-right' : 'slide-out-left');
+                }, 500);
+            }, 500);
+            const img = document.createElement('img');
+            img.className = 'mbti-brief-image';
+            img.src = personalityType.imgUrl;
+            briefImageContainer.appendChild(img)
+        }
+    }
+
+
+
     const containerId = `mbti-${config.cardType}-container`;
     const container = document.getElementById(containerId);
     container.setAttribute('lang', config.language);
@@ -196,23 +274,27 @@ function initializeBriefMBTI(config) {
     currentPersonalityType = {
         ...currentPersonalityType,
         characterColor: characterColor,
-        imgUrl: `${imagesHostUrl}/avatars/classic/${personalityType.name.en.toLowerCase()}.json`,
+        imgUrl: getAvatarImgUrl(config.style, personalityType),
     }
     basePersonalityType = JSON.parse(JSON.stringify(currentPersonalityType));
 
 
     container.innerHTML = createHTML(currentPersonalityType);
-    const briefImageContainer = document.querySelector('.mbti-brief-image');
+    const wrapper = document.getElementById('mbti-brief-wrapper');
+    wrapper.dataset.style = config.style;
+    const briefImageContainer = document.querySelector('.mbti-brief-image-container');
     briefImageContainer.style.minHeight = '200px';
-    loadLottieAnimation(currentPersonalityType, briefImageContainer);
 
-    if (config.slide) {
+    loadCardContent(currentPersonalityType, config.style);
+
+
+    if (config.interaction.slide) {
         let currentIndex = personalityTypes.findIndex(p => p.type.startsWith(currentPersonalityType.type.slice(0, 4)));
 
         document.querySelectorAll('.mbti-nav-button').forEach(button => {
             button.onclick = () => {
                 const wrapper = document.getElementById('mbti-brief-wrapper');
-                const briefImageContainer = document.querySelector('.mbti-brief-image');
+                const briefImageContainer = document.querySelector('.mbti-brief-image-container');
                 const backgroundElement = document.querySelector('.mbti-brief-card-bg');
                 const isNext = button.classList.contains('next');
 
@@ -231,11 +313,16 @@ function initializeBriefMBTI(config) {
 
                     void newImageContainer.offsetWidth;
                     newImageContainer.classList.remove('slide-in-right', 'slide-in-left');
-
-                    loadLottieAnimation(currentPersonalityType, newImageContainer);
-
                     backgroundElement.style.backgroundColor = currentPersonalityType.characterColor;
                     backgroundElement.querySelector('svg path').setAttribute('fill', currentPersonalityType.characterColor);
+
+                    if (wrapper.dataset.style === 'classic') {
+
+                        loadLottieAnimation(currentPersonalityType, newImageContainer);
+
+                    } else {
+                        newImageContainer.querySelector('.mbti-brief-image').src = currentPersonalityType.imgUrl;
+                    }
 
                     const moreButton = wrapper.querySelector('.mbti-more-button');
                     moreButton.href = getMoreInfoLink(currentPersonalityType);
@@ -244,5 +331,7 @@ function initializeBriefMBTI(config) {
             };
         });
     }
-
+    if (config.interaction.switch) {
+        document.getElementById('styleSwitchBtn').addEventListener('click', switchStyle);
+    }
 }
