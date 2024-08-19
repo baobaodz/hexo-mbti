@@ -1,5 +1,4 @@
 function initializeBriefMBTI(config) {
-
     const createHTML = (personalityType) => {
 
         const sildeButton = config.interaction.slide ? `
@@ -129,35 +128,6 @@ function initializeBriefMBTI(config) {
         return "#ffffff"; // 默认颜色，以防没有匹配
     }
 
-    const loadLottieAnimation = (personalityType, container) => {
-        fetch(personalityType.imgUrl)
-            .then(response => response.json())
-            .then(animationData => {
-                container.innerHTML = '';
-                container.style.minHeight = '100%';
-                const animation = lottie.loadAnimation({
-                    container: container,
-                    renderer: 'svg',
-                    loop: true,
-                    autoplay: true,
-                    animationData: animationData
-                });
-                container.addEventListener('mouseenter', () => {
-                    animation.loop = true;
-                    animation.play();
-                });
-
-                container.addEventListener('mouseleave', () => {
-                    animation.loop = false;
-                });
-                animation.addEventListener('complete', () => {
-                    if (!container.matches(':hover')) {
-                        animation.stop();
-                    }
-                });
-
-            });
-    }
 
     const getCurrentPersonalityType = (personalityType) => {
         const characterColor = getFillColor(personalityType);
@@ -213,36 +183,20 @@ function initializeBriefMBTI(config) {
             imgUrl: getAvatarImgUrl(wrapper.dataset.style, personalityType),
         };
         setTimeout(() => {
-            loadCardContent(currentPersonalityType, wrapper.dataset.style);
+            const briefImageContainer = document.querySelector('.mbti-brief-image-container');
+            loadCardContent(currentPersonalityType, wrapper.dataset.style, briefImageContainer);
             flipper.classList.remove('flipping');
         }, 300);
     }
-    const loadCardContent = (personalityType, style) => {
+    const setBriefImageContainerHeight = () => {
+        const wrapper = document.getElementById('mbti-brief-wrapper');
         const briefImageContainer = document.querySelector('.mbti-brief-image-container');
 
-
-        if (style === 'classic') {
-            loadLottieAnimation(personalityType, briefImageContainer);
-        } else if (style === 'illustration') {
-            briefImageContainer.innerHTML = '';
-            const backgroundElement = document.querySelector('.mbti-brief-card-bg');
-            const isNext = true;
-            briefImageContainer.classList.add(isNext ? 'slide-out-left' : 'slide-out-right');
-            setTimeout(() => {
-
-                briefImageContainer.classList.remove(isNext ? 'slide-out-left' : 'slide-out-right');
-                briefImageContainer.classList.add(isNext ? 'slide-out-right' : 'slide-out-left');
-                setTimeout(() => {
-                    briefImageContainer.classList.remove(isNext ? 'slide-out-right' : 'slide-out-left');
-                }, 500);
-            }, 500);
-            const img = document.createElement('img');
-            img.className = 'mbti-brief-image';
-            img.src = personalityType.imgUrl;
-            briefImageContainer.appendChild(img)
+        if (wrapper && briefImageContainer) {
+            const minHeight = wrapper.offsetWidth * 0.9;
+            briefImageContainer.style.minHeight = `${minHeight}px`;
         }
     }
-
 
 
     const containerId = `mbti-${config.cardType}-container`;
@@ -283,55 +237,143 @@ function initializeBriefMBTI(config) {
     const wrapper = document.getElementById('mbti-brief-wrapper');
     wrapper.dataset.style = config.style;
     const briefImageContainer = document.querySelector('.mbti-brief-image-container');
-    briefImageContainer.style.minHeight = '200px';
 
-    loadCardContent(currentPersonalityType, config.style);
+    loadCardContent(currentPersonalityType, config.style, briefImageContainer);
 
 
     if (config.interaction.slide) {
+        const elements = {
+            wrapper: document.getElementById('mbti-brief-wrapper'),
+            backgroundElement: document.querySelector('.mbti-brief-card-bg'),
+            styleSwitchBtn: document.querySelector('#styleSwitchBtn'),
+            navButtons: document.querySelectorAll('.mbti-nav-button')
+        };
+
         let currentIndex = personalityTypes.findIndex(p => p.type.startsWith(currentPersonalityType.type.slice(0, 4)));
 
-        document.querySelectorAll('.mbti-nav-button').forEach(button => {
-            button.onclick = () => {
-                const wrapper = document.getElementById('mbti-brief-wrapper');
-                const briefImageContainer = document.querySelector('.mbti-brief-image-container');
-                const backgroundElement = document.querySelector('.mbti-brief-card-bg');
-                const isNext = button.classList.contains('next');
+        const updatePersonalityInfo = (newIndex) => {
+            currentIndex = (newIndex + personalityTypes.length) % personalityTypes.length;
+            currentPersonalityType = getCurrentPersonalityType(personalityTypes[currentIndex]);
 
-                briefImageContainer.classList.add(isNext ? 'slide-out-left' : 'slide-out-right');
-                setTimeout(() => {
-                    currentIndex = (currentIndex + (isNext ? 1 : -1) + personalityTypes.length) % personalityTypes.length;
-                    currentPersonalityType = getCurrentPersonalityType(personalityTypes[currentIndex]);
+            elements.wrapper.querySelector('.mbti-brief-personality-name').textContent = `${currentPersonalityType.name} (${currentPersonalityType.type})`;
+            elements.wrapper.querySelector('.mbti-brief-desc').textContent = currentPersonalityType.desc;
+            elements.backgroundElement.style.backgroundColor = currentPersonalityType.characterColor;
+            elements.backgroundElement.querySelector('svg path').setAttribute('fill', currentPersonalityType.characterColor);
+            elements.styleSwitchBtn.querySelector('path').setAttribute('fill', currentPersonalityType.characterColor);
 
-                    wrapper.querySelector('.mbti-brief-personality-name').textContent = `${currentPersonalityType.name} (${currentPersonalityType.type})`;
-                    wrapper.querySelector('.mbti-brief-desc').textContent = currentPersonalityType.desc;
+            const moreButton = elements.wrapper.querySelector('.mbti-more-button');
+            moreButton.href = getMoreInfoLink(currentPersonalityType);
+            moreButton.style.backgroundColor = currentPersonalityType.characterColor;
+        };
 
-                    const newImageContainer = briefImageContainer.cloneNode(true);
-                    newImageContainer.classList.remove('slide-out-left', 'slide-out-right');
-                    newImageContainer.classList.add(isNext ? 'slide-in-right' : 'slide-in-left');
-                    briefImageContainer.parentNode.replaceChild(newImageContainer, briefImageContainer);
+        const animateSlide = (isNext) => {
+            const briefImageContainer = document.querySelector('.mbti-brief-image-container');
+            briefImageContainer.classList.add(isNext ? 'slide-out-left' : 'slide-out-right');
 
-                    void newImageContainer.offsetWidth;
-                    newImageContainer.classList.remove('slide-in-right', 'slide-in-left');
-                    backgroundElement.style.backgroundColor = currentPersonalityType.characterColor;
-                    backgroundElement.querySelector('svg path').setAttribute('fill', currentPersonalityType.characterColor);
+            setTimeout(() => {
+                const newImageContainer = briefImageContainer.cloneNode(true);
+                newImageContainer.classList.remove('slide-out-left', 'slide-out-right');
+                newImageContainer.classList.add(isNext ? 'slide-in-right' : 'slide-in-left');
+                briefImageContainer.parentNode.replaceChild(newImageContainer, briefImageContainer);
 
-                    if (wrapper.dataset.style === 'classic') {
+                void newImageContainer.offsetWidth;
+                newImageContainer.classList.remove('slide-in-right', 'slide-in-left');
 
-                        loadLottieAnimation(currentPersonalityType, newImageContainer);
+                updatePersonalityInfo(currentIndex + (isNext ? 1 : -1));
+                loadCardContent(currentPersonalityType, elements.wrapper.dataset.style, newImageContainer);
+            }, 500);
+        };
 
-                    } else {
-                        newImageContainer.querySelector('.mbti-brief-image').src = currentPersonalityType.imgUrl;
-                    }
-
-                    const moreButton = wrapper.querySelector('.mbti-more-button');
-                    moreButton.href = getMoreInfoLink(currentPersonalityType);
-                    moreButton.style.backgroundColor = currentPersonalityType.characterColor;
-                }, 500);
-            };
+        elements.navButtons.forEach(button => {
+            button.onclick = () => animateSlide(button.classList.contains('next'));
         });
     }
     if (config.interaction.switch) {
         document.getElementById('styleSwitchBtn').addEventListener('click', switchStyle);
     }
+}
+
+class StyleHandler {
+    loadContent(personalityType, container) {
+        throw new Error("Method 'loadContent' must be implemented.");
+    }
+}
+class ClassicStyleHandler extends StyleHandler {
+    loadContent(personalityType, container) {
+        this.loadLottieAnimation(personalityType, container);
+    }
+    loadLottieAnimation(personalityType, container) {
+        fetch(personalityType.imgUrl)
+            .then(response => response.json())
+            .then(animationData => {
+                container.innerHTML = '';
+                container.style.minHeight = '100%';
+                const animation = lottie.loadAnimation({
+                    container: container,
+                    renderer: 'svg',
+                    loop: true,
+                    autoplay: true,
+                    animationData: animationData
+                });
+                container.addEventListener('mouseenter', () => {
+                    animation.loop = true;
+                    animation.play();
+                });
+
+                container.addEventListener('mouseleave', () => {
+                    animation.loop = false;
+                });
+                animation.addEventListener('complete', () => {
+                    if (!container.matches(':hover')) {
+                        animation.stop();
+                    }
+                });
+
+            });
+    }
+}
+
+class imgStyleHandler extends StyleHandler {
+    loadContent(personalityType, container) {
+        this.loadImage(personalityType, container);
+    }
+
+    loadImage(personalityType, container) {
+        const prevHeight = container.offsetHeight || 200;
+        container.style.minHeight = `${prevHeight}px`;
+        fetch(personalityType.imgUrl)
+            .then(response => response.blob())
+            .then(blob => {
+                container.innerHTML = '';
+                const img = document.createElement('img');
+                img.className = 'mbti-brief-image';
+                img.src = URL.createObjectURL(blob);
+                container.appendChild(img);
+                container.style.minHeight = '100%';
+            })
+            .catch(error => {
+                console.error('Error loading image:', error);
+            });
+    }
+}
+const styleHandlerFactory = {
+    handlers: {
+        classic: ClassicStyleHandler,
+        illustration: imgStyleHandler
+    },
+
+    getHandler(style) {
+        const Handler = this.handlers[style] || imgStyleHandler;
+        return new Handler();
+    },
+
+    registerHandler(style, HandlerClass) {
+        this.handlers[style] = HandlerClass;
+    }
+};
+
+function loadCardContent(personalityType, style, briefImageContainer) {
+    const handler = styleHandlerFactory.getHandler(style);
+    handler.loadContent(personalityType, briefImageContainer);
+
 }
