@@ -15,7 +15,7 @@ function initializeBriefMBTI(config) {
             </div>
         ` : '';
         const briefHTML = `
-            ${config.interaction.switch ? '<div class="card-flipper">' : ''}
+            ${config.interaction.switch ? '<div class="card-flipper">' : ''}  
             <div id="mbti-brief-wrapper" data-style="${config.style}">
                 
                 <div class="mbti-brief-header">
@@ -30,7 +30,7 @@ function initializeBriefMBTI(config) {
                 </div>
                 <div class="mbti-brief-footer">
                     <span class="mbti-more-button">
-                        <a href="${getMoreInfoLink(personalityType)}" target="_blank">${langConfig.linkText[config.language]}</a>
+                        <a href="${getMoreInfoLink(config.language, personalityType)}" target="_blank">${getLocalizedContent(config.language, 'linkBriefText')}</a>
                     </span>
                     ${styleSwitchButton}
                 </div>
@@ -46,69 +46,7 @@ function initializeBriefMBTI(config) {
         `;
         return briefHTML;
     }
-    const languageConfig = {
-        en: {
-            ei: ['Extraverted', 'Introverted'],
-            ns: ['Intuitive', 'Observant'],
-            tf: ['Thinking', 'Feeling'],
-            jp: ['Judging', 'Prospecting'],
-            at: ['Assertive', 'Turbulent']
-        },
-        zh: {
-            ei: ['外向', '内向'],
-            ns: ['有远见', '现实'],
-            tf: ['理性分析', '感受'],
-            jp: ['评判', '展望'],
-            at: ['坚决', '起伏不定']
-        }
-    };
-    const langConfig = {
-        prefix: { zh: 'ch/', en: '' },
-        suffix: { zh: '人格', en: 'personality' },
-        linkText: { zh: '查看更多', en: 'View More' }
-    };
-    const getLocalizedContent = (content) => {
-        return content[config.language];
-    }
 
-    const getMBTIDimensions = (config) => {
-        const lang = config.language || 'en';
-        return [
-            { id: 'ei', label: languageConfig[lang].ei, value: config.data['E-I'] || config.data[languageConfig[lang].ei.join('-')], color: config.color[0] },
-            { id: 'ns', label: languageConfig[lang].ns, value: config.data['N-S'] || config.data[languageConfig[lang].ns.join('-')], color: config.color[1] },
-            { id: 'tf', label: languageConfig[lang].tf, value: config.data['T-F'] || config.data[languageConfig[lang].tf.join('-')], color: config.color[2] },
-            { id: 'jp', label: languageConfig[lang].jp, value: config.data['J-P'] || config.data[languageConfig[lang].jp.join('-')], color: config.color[3] },
-            { id: 'at', label: languageConfig[lang].at, value: config.data['A-T'] || config.data[languageConfig[lang].at.join('-')], color: config.color[4] },
-        ];
-    }
-    const calculatePersonalityType = (dimensions) => {
-        const type = dimensions
-            .slice(0, 4)
-            .map(d => d.id[getDominantTraitIndex(d.value[1])].toUpperCase())
-            .join('');
-        const personalityType = personalityTypes.find(p => p.type === type);
-
-        if (!personalityType) {
-            return { type, name: '未知类型', desc: '' };
-        }
-
-        let result = {
-            type,
-            name: getLocalizedContent(personalityType.name),
-            desc: getLocalizedContent(personalityType.desc),
-        };
-        result = {
-            ...result,
-            avatar: `${imagesHostUrl}/${result.type.toLowerCase()}-${personalityType.name.en.toLowerCase()}-s3-v1-${config.gender}.png?t=${Date.now()}`,
-            // avatar: personalityType.avatar[config.gender]
-        }
-
-        if (dimensions.length > 4) {
-            const atDimension = dimensions[4].value[0] < 50 ? 'A' : 'T';
-            result.type += '-' + atDimension;
-        }
-        return result;
-    };
     const getFillColor = (personalityType) => {
         const type = personalityType.type.slice(0, 4);
 
@@ -134,8 +72,8 @@ function initializeBriefMBTI(config) {
         container.style.setProperty('--character-color', characterColor);
         return {
             type: personalityType.type,
-            name: getLocalizedContent(personalityType.name),
-            desc: getLocalizedContent(personalityType.desc),
+            name: getLocalizedContent(config.language, personalityType.name),
+            desc: getLocalizedContent(config.language, personalityType.desc),
             characterColor: characterColor,
             imgUrl: getAvatarImgUrl(getCurrentStyle(), personalityType),
         };
@@ -145,35 +83,16 @@ function initializeBriefMBTI(config) {
         const wrapper = document.getElementById('mbti-brief-wrapper');
         return wrapper.dataset.style;
     }
-    const getMoreInfoLink = (personalityType) => {
-        const lang = config.language || 'en';
-        return `${baseUrl}/${langConfig.prefix[lang]}${personalityType.type.slice(0,4).toLowerCase()}-${langConfig.suffix[lang]}`;
-
-    }
-
-    const avatarConfigs = [{
-            style: 'classic',
-            author: 'Sourcegraph',
-            imgSuffix: 'json',
-            getImgUrl: (personalityType) => `${imagesHostUrl}/avatars/classic/${personalityType.name.en.toLowerCase()}.json`
-        },
-        {
-            style: 'illustration',
-            author: 'Sourcegraph',
-            imgSuffix: 'jpg',
-            getImgUrl: (personalityType) => `${imagesHostUrl}/avatars/illustration/${personalityType.type.slice(0, 4).toLowerCase()}.jpg`
-        }
-    ];
     const getAvatarImgUrl = (style, personalityType) => {
-        const avatarConfig = avatarConfigs.find(item => item.style === style);
-        return avatarConfig ? avatarConfig.getImgUrl(personalityType) : null;
+        const styleConfig = styleConfigs[style];
+        return styleConfig ? styleConfig.getImgUrl(personalityType, config.gender) : null;
     }
     const switchStyle = () => {
         const wrapper = document.getElementById('mbti-brief-wrapper');
         const flipper = document.querySelector('.card-flipper');
         flipper.classList.add('flipping');
 
-        const styles = ['classic', 'illustration'];
+        const styles = Object.keys(styleConfigs);
         const currentIndex = styles.indexOf(wrapper.dataset.style);
         const newIndex = (currentIndex + 1) % styles.length;
         const personalityType = personalityTypes.find(p => p.type === currentPersonalityType.type.slice(0, 4));
@@ -188,22 +107,12 @@ function initializeBriefMBTI(config) {
             flipper.classList.remove('flipping');
         }, 300);
     }
-    const setBriefImageContainerHeight = () => {
-        const wrapper = document.getElementById('mbti-brief-wrapper');
-        const briefImageContainer = document.querySelector('.mbti-brief-image-container');
-
-        if (wrapper && briefImageContainer) {
-            const minHeight = wrapper.offsetWidth * 0.9;
-            briefImageContainer.style.minHeight = `${minHeight}px`;
-        }
-    }
 
 
     const containerId = `mbti-${config.cardType}-container`;
     const container = document.getElementById(containerId);
     container.setAttribute('lang', config.language);
-    const imagesHostUrl = 'https://cdn.jsdelivr.net/gh/baobaodz/picx-images-hosting@master/hexo-mbti';
-    const baseUrl = 'https://www.16personalities.com';
+
     let mbtiDimensions = [];
     let baseMBTIDimensions = [];
     let currentPersonalityType = {};
@@ -211,14 +120,14 @@ function initializeBriefMBTI(config) {
     if (config.data && config.data.length) {
         mbtiDimensions = getMBTIDimensions(config);
         baseMBTIDimensions = JSON.parse(JSON.stringify(mbtiDimensions));
-        currentPersonalityType = calculatePersonalityType(mbtiDimensions);
+        currentPersonalityType = calculatePersonalityType(config, mbtiDimensions);
 
     } else if (config.type) {
         const personalityType = personalityTypes.find(p => p.type === config.type.slice(0, 4));
         currentPersonalityType = {
             type: config.type,
-            name: getLocalizedContent(personalityType.name),
-            desc: getLocalizedContent(personalityType.desc),
+            name: getLocalizedContent(config.language, personalityType.name),
+            desc: getLocalizedContent(config.language, personalityType.desc),
             // avatar: `${imagesHostUrl}/${personalityType.type.toLowerCase()}-${personalityType.name.en.toLowerCase()}-s3-v1-${config.gender}.png?t=${Date.now()}`,
         }
     }
@@ -262,7 +171,7 @@ function initializeBriefMBTI(config) {
             elements.styleSwitchBtn.querySelector('path').setAttribute('fill', currentPersonalityType.characterColor);
 
             const moreButton = elements.wrapper.querySelector('.mbti-more-button');
-            moreButton.href = getMoreInfoLink(currentPersonalityType);
+            moreButton.querySelector('a').href = getMoreInfoLink(config.language, currentPersonalityType);
             moreButton.style.backgroundColor = currentPersonalityType.characterColor;
         };
 
@@ -303,10 +212,9 @@ class ClassicStyleHandler extends StyleHandler {
         this.loadLottieAnimation(personalityType, container);
     }
     loadLottieAnimation(personalityType, container) {
-        fetch(personalityType.imgUrl)
-            .then(response => response.json())
+        container.innerHTML = '';
+        fetchWithCache(personalityType.imgUrl)
             .then(animationData => {
-                container.innerHTML = '';
                 container.style.minHeight = '100%';
                 const animation = lottie.loadAnimation({
                     container: container,
@@ -341,10 +249,10 @@ class imgStyleHandler extends StyleHandler {
     loadImage(personalityType, container) {
         const prevHeight = container.offsetHeight || 200;
         container.style.minHeight = `${prevHeight}px`;
-        fetch(personalityType.imgUrl)
-            .then(response => response.blob())
+        container.innerHTML = '';
+        fetchWithCache(personalityType.imgUrl, 'blob')
             .then(blob => {
-                container.innerHTML = '';
+
                 const img = document.createElement('img');
                 img.className = 'mbti-brief-image';
                 img.src = URL.createObjectURL(blob);
@@ -356,14 +264,38 @@ class imgStyleHandler extends StyleHandler {
             });
     }
 }
-const styleHandlerFactory = {
-    handlers: {
-        classic: ClassicStyleHandler,
-        illustration: imgStyleHandler
-    },
 
+const styleConfigs = {
+    classic: {
+        author: 'Sourcegraph',
+        imgSuffix: 'json',
+        getImgUrl: (personalityType) => `${imagesHostUrl}/avatars/classic/${personalityType.name.en.toLowerCase()}.json`,
+        handler: ClassicStyleHandler
+    },
+    illustration: {
+        author: 'Shadoowww__',
+        imgSuffix: 'jpg',
+        getImgUrl: (personalityType) => `${imagesHostUrl}/avatars/illustration/${personalityType.type.slice(0, 4).toLowerCase()}.jpg`,
+        handler: imgStyleHandler
+    },
+    comic: {
+        author: 'mbti_as_things',
+        imgSuffix: 'png',
+        getImgUrl: (personalityType, gender) => `${imagesHostUrl}/avatars/comic/${personalityType.type.slice(0, 4).toLowerCase()}-${gender}.png`,
+        handler: imgStyleHandler
+    },
+    Mexico: {
+        author: '_.space.cadette._',
+        imgSuffix: 'png',
+        getImgUrl: (personalityType) => `${imagesHostUrl}/avatars/Mexico/${personalityType.type.slice(0, 4).toLowerCase()}.png`,
+        handler: imgStyleHandler
+    }
+};
+
+
+const styleHandlerFactory = {
     getHandler(style) {
-        const Handler = this.handlers[style] || imgStyleHandler;
+        const Handler = styleConfigs[style]['handler'] || imgStyleHandler;
         return new Handler();
     },
 

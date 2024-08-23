@@ -82,7 +82,9 @@
     /* 保证后续的mask生效 */
 }
 
-.mbti-brief-image {}
+.mbti-brief-image {
+    background-color: transparent !important;
+}
 
 .mbti-brief-desc {
     font-size: 12px;
