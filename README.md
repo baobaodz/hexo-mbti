@@ -2,13 +2,13 @@
 
 一个用于在 Hexo 博客中展示 MBTI 性格测试结果的插件。
 
-[![例图](https://s21.ax1x.com/2024/08/10/pAStFDx.png)](detailed card 效果)
+![例图](https://s21.ax1x.com/2024/08/10/pAStFDx.png "detailed card 效果")
 
 `detailed card 效果`
 
 ------
 
-[![例图](https://s21.ax1x.com/2024/08/24/pAFNK6U.png)](brief card [style:classic]效果)
+![例图](https://s21.ax1x.com/2024/08/24/pAFNK6U.png "brief card [style:classic]效果")
 
 `brief card [style:classic]效果`
 
@@ -109,7 +109,9 @@ tooltip: 工具提示配置
 enable: 是否启用该卡片
 layout: 插入卡片的页面位置
 type: 人格类型 如ENFP-A或ENFP
-style: 卡片风格，风格不同，卡片的样式、人格图像、描述等都不一样，默认'classic'， 取16personalities的人格形象
+style: 卡片风格，风格不同，卡片的样式、人格图像、描述等都不一样
+	   默认'classic'， 取16personalities的人格形象
+       可选'classic'、'illustration'、'comic'、'Mexico'、'Sanrio'
 interaction: 交互效果
 	slide: 是否启用滑动，启用可滑动切换人格
 	switch: 是否启用风格切换，启用可切换不同卡片风格
