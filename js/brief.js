@@ -12,6 +12,7 @@ function initializeBriefMBTI(config) {
                 <svg id="styleSwitchBtn" t="1723948319032" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="25040" width="32" height="32">
                     <path d="M514 114.3c-219.9 0-398.9 178.9-398.9 398.8 0.1 220 179 398.9 398.9 398.9 219.9 0 398.8-178.9 398.8-398.8S733.9 114.3 514 114.3z m218.3 489v1.7c0 0.5-0.1 1-0.1 1.6 0 0.3 0 0.6-0.1 0.9 0 0.5-0.1 1-0.2 1.5 0 0.3-0.1 0.7-0.1 1-0.1 0.4-0.1 0.8-0.2 1.2-0.1 0.4-0.2 0.9-0.2 1.3-0.1 0.3-0.1 0.6-0.2 0.8-0.1 0.6-0.3 1.2-0.4 1.8 0 0.1-0.1 0.2-0.1 0.3-2.2 8.5-6.6 16.6-13.3 23.3L600.7 755.4c-20 20-52.7 20-72.6 0-20-20-20-52.7 0-72.6l28.9-28.9H347c-28.3 0-51.4-23.1-51.4-51.4 0-28.3 23.1-51.4 51.4-51.4h334c13.2 0 26.4 5 36.4 15s15 23.2 15 36.4c0 0.3-0.1 0.6-0.1 0.8z m0.1-179.5c0 28.3-23.1 51.4-51.4 51.4H347c-13.2 0-26.4-5-36.4-15s-15-23.2-15-36.4v-0.8-1.6c0-0.5 0.1-1.1 0.1-1.6 0-0.3 0-0.6 0.1-0.9 0-0.5 0.1-1 0.2-1.5 0-0.3 0.1-0.7 0.1-1 0.1-0.4 0.1-0.8 0.2-1.2 0.1-0.4 0.2-0.9 0.2-1.3 0.1-0.3 0.1-0.6 0.2-0.8 0.1-0.6 0.3-1.2 0.4-1.8 0-0.1 0.1-0.2 0.1-0.3 2.2-8.5 6.6-16.6 13.3-23.3l116.6-116.6c20-20 52.7-20 72.6 0 20 20 20 52.7 0 72.6L471 372.5h210c28.2 0 51.4 23.1 51.4 51.3z" fill="${personalityType.characterColor}" p-id="25041"></path>
                 </svg>
+    
             </div>
         ` : '';
         const briefHTML = `
@@ -70,6 +71,8 @@ function initializeBriefMBTI(config) {
     const getCurrentPersonalityType = (personalityType) => {
         const characterColor = getFillColor(personalityType);
         container.style.setProperty('--character-color', characterColor);
+        const moreSaturatedColor = getMoreSaturatedColor(characterColor);
+        container.style.setProperty('--character-active-color', moreSaturatedColor);
         return {
             type: personalityType.type,
             name: getLocalizedContent(config.language, personalityType.name),
@@ -134,6 +137,8 @@ function initializeBriefMBTI(config) {
     const personalityType = personalityTypes.find(p => p.type === currentPersonalityType.type.slice(0, 4));
     const characterColor = getFillColor(personalityType);
     container.style.setProperty('--character-color', characterColor);
+    const moreSaturatedColor = getMoreSaturatedColor(characterColor);
+    container.style.setProperty('--character-active-color', moreSaturatedColor);
     currentPersonalityType = {
         ...currentPersonalityType,
         characterColor: characterColor,
@@ -172,7 +177,6 @@ function initializeBriefMBTI(config) {
 
             const moreButton = elements.wrapper.querySelector('.mbti-more-button');
             moreButton.querySelector('a').href = getMoreInfoLink(config.language, currentPersonalityType);
-            moreButton.style.backgroundColor = currentPersonalityType.characterColor;
         };
 
         const animateSlide = (isNext) => {
@@ -212,9 +216,10 @@ class ClassicStyleHandler extends StyleHandler {
         this.loadLottieAnimation(personalityType, container);
     }
     loadLottieAnimation(personalityType, container) {
-        container.innerHTML = '';
+        container.innerHTML = '<div class="water-drop-loading"></div>';
         fetchWithCache(personalityType.imgUrl)
             .then(animationData => {
+                container.innerHTML = '';
                 container.style.minHeight = '100%';
                 const animation = lottie.loadAnimation({
                     container: container,
@@ -249,18 +254,22 @@ class imgStyleHandler extends StyleHandler {
     loadImage(personalityType, container) {
         const prevHeight = container.offsetHeight || 200;
         container.style.minHeight = `${prevHeight}px`;
-        container.innerHTML = '';
+        container.innerHTML = '<div class="water-drop-loading"></div>';
         fetchWithCache(personalityType.imgUrl, 'blob')
             .then(blob => {
 
                 const img = document.createElement('img');
                 img.className = 'mbti-brief-image';
                 img.src = URL.createObjectURL(blob);
-                container.appendChild(img);
-                container.style.minHeight = '100%';
+                img.onload = () => {
+                    container.innerHTML = '';
+                    container.appendChild(img);
+                    container.style.minHeight = '100%';
+                };
             })
             .catch(error => {
                 console.error('Error loading image:', error);
+                container.innerHTML = 'Failed to load image';
             });
     }
 }
@@ -269,29 +278,68 @@ const styleConfigs = {
     classic: {
         author: 'Sourcegraph',
         imgSuffix: 'json',
+        genderSpecific: false,
         getImgUrl: (personalityType) => `${imagesHostUrl}/avatars/classic/${personalityType.name.en.toLowerCase()}.json`,
         handler: ClassicStyleHandler
     },
     illustration: {
         author: 'Shadoowww__',
         imgSuffix: 'jpg',
-        getImgUrl: (personalityType) => `${imagesHostUrl}/avatars/illustration/${personalityType.type.slice(0, 4).toLowerCase()}.jpg`,
+        genderSpecific: false,
         handler: imgStyleHandler
     },
     comic: {
         author: 'mbti_as_things',
         imgSuffix: 'png',
-        getImgUrl: (personalityType, gender) => `${imagesHostUrl}/avatars/comic/${personalityType.type.slice(0, 4).toLowerCase()}-${gender}.png`,
+        genderSpecific: true,
         handler: imgStyleHandler
     },
     Mexico: {
         author: '_.space.cadette._',
         imgSuffix: 'png',
-        getImgUrl: (personalityType) => `${imagesHostUrl}/avatars/Mexico/${personalityType.type.slice(0, 4).toLowerCase()}.png`,
+        genderSpecific: false,
         handler: imgStyleHandler
-    }
+    },
+    Sanrio: {
+        author: 'none',
+        imgSuffix: 'png',
+        genderSpecific: false,
+        handler: imgStyleHandler
+    },
+    simple_line_color: {
+        author: 'none',
+        imgSuffix: 'png',
+        genderSpecific: false,
+        handler: imgStyleHandler
+    },
+    simple_line_color_2: {
+        author: 'VIENNTJ',
+        imgSuffix: 'png',
+        genderSpecific: true,
+        handler: imgStyleHandler
+    },
+    fantasy: {
+        author: 'akklonia',
+        imgSuffix: 'png',
+        genderSpecific: false,
+        handler: imgStyleHandler
+    },
+    Korean_comic: {
+        author: 'FJ',
+        imgSuffix: 'png',
+        genderSpecific: false,
+        handler: imgStyleHandler
+    },
 };
-
+Object.keys(styleConfigs).forEach(style => {
+    if (!styleConfigs[style].getImgUrl) {
+        styleConfigs[style].getImgUrl = (personalityType, gender) => {
+            const baseUrl = `${imagesHostUrl}/avatars/${style}/${personalityType.type.slice(0, 4).toLowerCase()}`;
+            const genderSuffix = styleConfigs[style].genderSpecific ? `-${gender}` : '';
+            return `${baseUrl}${genderSuffix}.${styleConfigs[style].imgSuffix}`;
+        };
+    }
+});
 
 const styleHandlerFactory = {
     getHandler(style) {

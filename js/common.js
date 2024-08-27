@@ -127,3 +127,39 @@ function throttle(func, limit) {
         }
     };
 }
+
+function getMoreSaturatedColor(fillColor) {
+    // 移除颜色字符串开头的 '#' 符号
+    const hex = fillColor.replace('#', '');
+
+    // 将十六进制颜色转换为RGB
+    let r = parseInt(hex.substr(0, 2), 16);
+    let g = parseInt(hex.substr(2, 2), 16);
+    let b = parseInt(hex.substr(4, 2), 16);
+
+    // 计算当前的饱和度
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const delta = max - min;
+
+    const saturationIncrease = 0.6;
+
+    if (delta !== 0) {
+        r = r + (max - r) * (saturationIncrease - 1);
+        g = g + (max - g) * (saturationIncrease - 1);
+        b = b + (max - b) * (saturationIncrease - 1);
+    }
+
+    // 确保RGB值在0-255范围内
+    r = Math.min(255, Math.max(0, Math.round(r)));
+    g = Math.min(255, Math.max(0, Math.round(g)));
+    b = Math.min(255, Math.max(0, Math.round(b)));
+
+    // 将RGB值转回十六进制
+    const saturatedHex = '#' +
+        ((1 << 24) + (r << 16) + (g << 8) + b)
+        .toString(16)
+        .slice(1);
+
+    return saturatedHex;
+}
