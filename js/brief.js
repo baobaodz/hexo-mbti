@@ -21,7 +21,7 @@ function initializeBriefMBTI(config) {
                 
                 <div class="mbti-brief-header">
                     <div class="mbti-brief-personality-name">
-                        ${personalityType.name} (${personalityType.type})
+                        <span>${personalityType.name}</span> <span lang="en">(${personalityType.type})</span>
                     </div>
                 </div>
                 <div class="mbti-brief-body">
@@ -88,7 +88,7 @@ function initializeBriefMBTI(config) {
     }
     const getAvatarImgUrl = (style, personalityType) => {
         const styleConfig = styleConfigs[style];
-        return styleConfig ? styleConfig.getImgUrl(personalityType, config.gender) : null;
+        return styleConfig ? styleConfig.imageFormat.getUrl(personalityType, config.gender) : null;
     }
     const switchStyle = () => {
         const wrapper = document.getElementById('mbti-brief-wrapper');
@@ -105,9 +105,15 @@ function initializeBriefMBTI(config) {
             imgUrl: getAvatarImgUrl(wrapper.dataset.style, personalityType),
         };
         setTimeout(() => {
-            const briefImageContainer = document.querySelector('.mbti-brief-image-container');
-            loadCardContent(currentPersonalityType, wrapper.dataset.style, briefImageContainer);
             flipper.classList.remove('flipping');
+            const briefImageContainer = document.querySelector('.mbti-brief-image-container');
+            loadCardContent(currentPersonalityType, wrapper.dataset.style, briefImageContainer)
+                .then(() => {
+                    requestAnimationFrame(() => {
+                        wrapper.style.maxHeight = 'none';
+
+                    });
+                });
         }, 300);
     }
 
@@ -150,10 +156,15 @@ function initializeBriefMBTI(config) {
     container.innerHTML = createHTML(currentPersonalityType);
     const wrapper = document.getElementById('mbti-brief-wrapper');
     wrapper.dataset.style = config.style;
+    wrapper.setAttribute('lang', config.language);
     const briefImageContainer = document.querySelector('.mbti-brief-image-container');
 
-    loadCardContent(currentPersonalityType, config.style, briefImageContainer);
-
+    loadCardContent(currentPersonalityType, wrapper.dataset.style, briefImageContainer)
+        .then(() => {
+            requestAnimationFrame(() => {
+                wrapper.style.maxHeight = 'none';
+            });
+        });
 
     if (config.interaction.slide) {
         const elements = {
@@ -169,7 +180,7 @@ function initializeBriefMBTI(config) {
             currentIndex = (newIndex + personalityTypes.length) % personalityTypes.length;
             currentPersonalityType = getCurrentPersonalityType(personalityTypes[currentIndex]);
 
-            elements.wrapper.querySelector('.mbti-brief-personality-name').textContent = `${currentPersonalityType.name} (${currentPersonalityType.type})`;
+            elements.wrapper.querySelector('.mbti-brief-personality-name').innerHTML = `<span>${currentPersonalityType.name}</span> <span lang="en">(${currentPersonalityType.type})</span>`;
             elements.wrapper.querySelector('.mbti-brief-desc').textContent = currentPersonalityType.desc;
             elements.backgroundElement.style.backgroundColor = currentPersonalityType.characterColor;
             elements.backgroundElement.querySelector('svg path').setAttribute('fill', currentPersonalityType.characterColor);
@@ -193,26 +204,51 @@ function initializeBriefMBTI(config) {
                 newImageContainer.classList.remove('slide-in-right', 'slide-in-left');
 
                 updatePersonalityInfo(currentIndex + (isNext ? 1 : -1));
-                loadCardContent(currentPersonalityType, elements.wrapper.dataset.style, newImageContainer);
+                // loadCardContent(currentPersonalityType, elements.wrapper.dataset.style, newImageContainer);
+
+                loadCardContent(currentPersonalityType, elements.wrapper.dataset.style, newImageContainer)
+                    .then(() => {
+                        requestAnimationFrame(() => {
+                            wrapper.style.maxHeight = 'none';
+                            newImageContainer.classList.remove('slide-in-right', 'slide-in-left');
+                        });
+                    });
             }, 500);
         };
 
+        const throttledSlide = throttle(animateSlide, 300);
         elements.navButtons.forEach(button => {
-            button.onclick = () => animateSlide(button.classList.contains('next'));
+            button.onclick = () => throttledSlide(button.classList.contains('next'));
         });
     }
     if (config.interaction.switch) {
-        document.getElementById('styleSwitchBtn').addEventListener('click', switchStyle);
+        const throttledSwitchStyle = throttle(switchStyle, 300);
+        document.getElementById('styleSwitchBtn').addEventListener('click', throttledSwitchStyle);
     }
 }
 
 class StyleHandler {
-    loadContent(personalityType, container) {
-        throw new Error("Method 'loadContent' must be implemented.");
+    loadContent(personalityType, container, style) {
+        throw new Error("Method 'loadImage' must be implemented.");
+    }
+    loadFont(style) {
+        const fontConfig = styleConfigs[style].fontFormat;
+        if (fontConfig) {
+            loadFontWithCache(fontConfig)
+                .then(() => {
+                    const wrapper = document.getElementById('mbti-brief-wrapper');
+                    wrapper.style.setProperty('--chinese-font', fontConfig.chineseFont);
+                    wrapper.style.setProperty('--english-font', fontConfig.englishFont);
+                })
+                .catch(error => {
+                    console.error('Font loading error:', error);
+                });
+        }
     }
 }
 class ClassicStyleHandler extends StyleHandler {
-    loadContent(personalityType, container) {
+    loadContent(personalityType, container, style) {
+        this.loadFont(style);
         this.loadLottieAnimation(personalityType, container);
     }
     loadLottieAnimation(personalityType, container) {
@@ -240,6 +276,7 @@ class ClassicStyleHandler extends StyleHandler {
                     if (!container.matches(':hover')) {
                         animation.stop();
                     }
+                    container.dispatchEvent(new Event('load'));
                 });
 
             });
@@ -247,7 +284,8 @@ class ClassicStyleHandler extends StyleHandler {
 }
 
 class imgStyleHandler extends StyleHandler {
-    loadContent(personalityType, container) {
+    loadContent(personalityType, container, style) {
+        this.loadFont(style);
         this.loadImage(personalityType, container);
     }
 
@@ -265,6 +303,7 @@ class imgStyleHandler extends StyleHandler {
                     container.innerHTML = '';
                     container.appendChild(img);
                     container.style.minHeight = '100%';
+                    container.dispatchEvent(new Event('load')); // 触发 load 事件
                 };
             })
             .catch(error => {
@@ -276,67 +315,170 @@ class imgStyleHandler extends StyleHandler {
 
 const styleConfigs = {
     classic: {
+        name: 'classic',
         author: 'Sourcegraph',
-        imgSuffix: 'json',
-        genderSpecific: false,
-        getImgUrl: (personalityType) => `${imagesHostUrl}/avatars/classic/${personalityType.name.en.toLowerCase()}.json`,
-        handler: ClassicStyleHandler
+        imageFormat: {
+            type: 'json',
+            genderSpecific: false,
+            getUrl: (personalityType) => `${imagesHostUrl}/avatars/classic/${personalityType.name.en.toLowerCase()}.json`
+        },
+        fontFormat: {
+            chineseFont: '',
+            englishFont: "Red Hat Display",
+        },
+        handler: ClassicStyleHandler,
     },
     illustration: {
+        name: 'illustration',
         author: 'Shadoowww__',
-        imgSuffix: 'jpg',
-        genderSpecific: false,
-        handler: imgStyleHandler
+        imageFormat: {
+            type: 'jpg',
+            genderSpecific: false
+        },
+        fontFormat: {
+            chineseFont: '',
+            englishFont: "Rammetto One",
+        },
+        handler: imgStyleHandler,
+
     },
     comic: {
+        name: 'comic',
         author: 'mbti_as_things',
-        imgSuffix: 'png',
-        genderSpecific: true,
-        handler: imgStyleHandler
+        imageFormat: {
+            type: 'png',
+            genderSpecific: true
+        },
+        fontFormat: {
+            chineseFont: 'HanYiFeiLi-Jian',
+            englishFont: "Lilita One",
+        },
+        handler: imgStyleHandler,
     },
     Mexico: {
+        name: 'Mexico',
         author: '_.space.cadette._',
-        imgSuffix: 'png',
-        genderSpecific: false,
-        handler: imgStyleHandler
+        imageFormat: {
+            type: 'png',
+            genderSpecific: false
+        },
+        fontFormat: {
+            chineseFont: '',
+            englishFont: "Sacramento",
+        },
+        handler: imgStyleHandler,
     },
     Sanrio: {
+        name: 'Sanrio',
         author: 'none',
-        imgSuffix: 'png',
-        genderSpecific: false,
-        handler: imgStyleHandler
+        imageFormat: {
+            type: 'png',
+            genderSpecific: false
+        },
+        fontFormat: {
+            chineseFont: '',
+            englishFont: "Gloria Hallelujah",
+        },
+        handler: imgStyleHandler,
     },
     simple_line_color: {
+        name: 'simple_line_color',
         author: 'none',
-        imgSuffix: 'png',
-        genderSpecific: false,
-        handler: imgStyleHandler
+        imageFormat: {
+            type: 'png',
+            genderSpecific: false
+        },
+        fontFormat: {
+            chineseFont: '',
+            englishFont: "Single Day",
+        },
+        handler: imgStyleHandler,
     },
     simple_line_color_2: {
+        name: 'simple_line_color_2',
         author: 'VIENNTJ',
-        imgSuffix: 'png',
-        genderSpecific: true,
-        handler: imgStyleHandler
+        imageFormat: {
+            type: 'png',
+            genderSpecific: true
+        },
+        fontFormat: {
+            chineseFont: '',
+            englishFont: "Yatra One",
+        },
+        handler: imgStyleHandler,
     },
     fantasy: {
+        name: 'fantasy',
         author: 'akklonia',
-        imgSuffix: 'png',
-        genderSpecific: false,
-        handler: imgStyleHandler
+        imageFormat: {
+            type: 'png',
+            genderSpecific: false
+        },
+        fontFormat: {
+            chineseFont: '',
+            englishFont: "Barlow Condensed",
+        },
+        handler: imgStyleHandler,
     },
     Korean_comic: {
+        name: 'Korean_comic',
         author: 'FJ',
-        imgSuffix: 'png',
-        genderSpecific: false,
-        handler: imgStyleHandler
+        imageFormat: {
+            type: 'png',
+            genderSpecific: false
+        },
+        fontFormat: {
+            chineseFont: '',
+            englishFont: "Annie Use Your Telescope",
+        },
+        handler: imgStyleHandler,
+    },
+    cat: {
+        name: 'cat',
+        author: 'none',
+        imageFormat: {
+            type: 'png',
+            genderSpecific: false
+        },
+        fontFormat: {
+            chineseFont: '',
+            englishFont: "Architects Daughter",
+        },
+        handler: imgStyleHandler,
+    },
+    classic_cute: {
+        name: 'classic_cute',
+        author: 'none',
+        imageFormat: {
+            type: 'png',
+            genderSpecific: false
+        },
+        fontFormat: {
+            chineseFont: '',
+            englishFont: "Architects Daughter",
+        },
+        handler: imgStyleHandler,
+    },
+    work: {
+        name: 'work',
+        author: 'mbti.friendly',
+        imageFormat: {
+            type: 'png',
+            genderSpecific: false
+        },
+        fontFormat: {
+            chineseFont: '',
+            englishFont: "Archivo Black",
+        },
+        handler: imgStyleHandler,
     },
 };
-Object.keys(styleConfigs).forEach(style => {
-    if (!styleConfigs[style].getImgUrl) {
-        styleConfigs[style].getImgUrl = (personalityType, gender) => {
-            const baseUrl = `${imagesHostUrl}/avatars/${style}/${personalityType.type.slice(0, 4).toLowerCase()}`;
-            const genderSuffix = styleConfigs[style].genderSpecific ? `-${gender}` : '';
-            return `${baseUrl}${genderSuffix}.${styleConfigs[style].imgSuffix}`;
+Object.values(styleConfigs).forEach(config => {
+    if (!config.imageFormat.getUrl) {
+        config.imageFormat.getUrl = (personalityType, gender) => {
+            const baseUrl = `${imagesHostUrl}/avatars/${config.name}/${personalityType.type.slice(0, 4).toLowerCase()}`;
+            const genderSuffix = config.imageFormat.genderSpecific ? `-${gender}` : '';
+            return `${baseUrl}${genderSuffix}.${config.imageFormat.type}`;
         };
     }
 });
@@ -353,7 +495,9 @@ const styleHandlerFactory = {
 };
 
 function loadCardContent(personalityType, style, briefImageContainer) {
-    const handler = styleHandlerFactory.getHandler(style);
-    handler.loadContent(personalityType, briefImageContainer);
-
+    return new Promise((resolve) => {
+        const handler = styleHandlerFactory.getHandler(style);
+        handler.loadContent(personalityType, briefImageContainer, style);
+        briefImageContainer.addEventListener('load', resolve, { once: true });
+    });
 }

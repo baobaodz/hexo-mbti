@@ -33,7 +33,7 @@ function getLocalizedContent(language, content) {
         return content[lang];
     } else if (typeof content === 'string') {
         const key = content;
-        if (languageConfig[lang] && languageConfig[lang][key]) {
+        if (languageConfig[lang] && languageConfig[lang][key] !== undefined) {
             return languageConfig[lang][key];
         }
     }
@@ -108,6 +108,48 @@ function fetchWithCache(url, responseType = 'json') {
             return data;
         });
 }
+const fontCache = new Map();
+
+function loadFontWithCache(fontConfig) {
+    const cacheKey = `${fontConfig.englishFont || 'default'}-${fontConfig.chineseFont || 'default'}`;
+
+    if (fontCache.has(cacheKey)) {
+        return Promise.resolve(fontCache.get(cacheKey));
+    }
+
+    const fontPromises = [];
+
+    if (fontConfig.englishFont) {
+        fontPromises.push(new Promise((resolve, reject) => {
+            WebFont.load({
+                google: {
+                    families: [fontConfig.englishFont]
+                },
+                active: resolve,
+                inactive: reject
+            });
+        }));
+    }
+
+    if (fontConfig.chineseFont) {
+        const fontFamily = fontConfig.chineseFont.replace(/\s/g, '');
+        fontPromises.push(new Promise((resolve, reject) => {
+            const fontFace = new FontFace(
+                fontFamily,
+                `url(${imagesHostUrl}/fonts//${fontFamily}/${fontFamily}.woff2) format('woff2'),`, { unicodeRange: 'U+4E00-9FFF, U+3400-4DBF, U+20000-2A6DF, U+2A700-2B73F, U+2B740-2B81F, U+2B820-2CEAF, U+F900-FAFF, U+2F800-2FA1F' }
+            );
+            fontFace.load().then((loadedFace) => {
+                document.fonts.add(loadedFace);
+                resolve();
+            }).catch(reject);
+        }));
+    }
+
+    const fontPromise = fontPromises.length > 0 ? Promise.all(fontPromises) : Promise.resolve();
+    fontCache.set(cacheKey, fontPromise);
+    return fontPromise;
+}
+
 
 function debounce(func, delay) {
     let timer;
