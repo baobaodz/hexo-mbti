@@ -17,7 +17,7 @@ function initializeBriefMBTI(config) {
         ` : '';
         const briefHTML = `
             ${config.interaction.switch ? '<div class="card-flipper">' : ''}  
-            <div id="mbti-brief-wrapper" data-style="${config.style}">
+            <div id="mbti-brief-wrapper" data-style="${config.style}" data-layout="medium">
                 
                 <div class="mbti-brief-header">
                     <div class="mbti-brief-personality-name">
@@ -114,7 +114,7 @@ function initializeBriefMBTI(config) {
 
                     });
                 });
-        }, 300);
+        }, 500);
     }
 
 
@@ -225,6 +225,21 @@ function initializeBriefMBTI(config) {
         const throttledSwitchStyle = throttle(switchStyle, 300);
         document.getElementById('styleSwitchBtn').addEventListener('click', throttledSwitchStyle);
     }
+    if (config.interaction.resize) {
+        wrapper.classList.add('resizable');
+        const throttledResize = throttle((event) => {
+            const { width, height } = event.detail;
+            const wrapper = document.getElementById('mbti-brief-wrapper');
+            if (height < 260) {
+                wrapper.dataset.layout = 'small';
+            } else {
+                wrapper.dataset.layout = 'large';
+            }
+        }, 300);
+
+        resizeContainer('.resizable');
+        wrapper.addEventListener('resize', throttledResize);
+    }
 }
 
 class StyleHandler {
@@ -256,7 +271,7 @@ class ClassicStyleHandler extends StyleHandler {
         fetchWithCache(personalityType.imgUrl)
             .then(animationData => {
                 container.innerHTML = '';
-                container.style.minHeight = '100%';
+                container.style.minHeight = 'auto';
                 const animation = lottie.loadAnimation({
                     container: container,
                     renderer: 'svg',
@@ -302,7 +317,7 @@ class imgStyleHandler extends StyleHandler {
                 img.onload = () => {
                     container.innerHTML = '';
                     container.appendChild(img);
-                    container.style.minHeight = '100%';
+                    container.style.minHeight = 'auto';
                     container.dispatchEvent(new Event('load')); // 触发 load 事件
                 };
             })
@@ -469,6 +484,45 @@ const styleConfigs = {
         fontFormat: {
             chineseFont: '',
             englishFont: "Archivo Black",
+        },
+        handler: imgStyleHandler,
+    },
+    illustration_3: {
+        name: 'illustration_3',
+        author: 'toptier sensor',
+        imageFormat: {
+            type: 'png',
+            genderSpecific: false
+        },
+        fontFormat: {
+            chineseFont: '',
+            englishFont: "Sue Ellen Francisco",
+        },
+        handler: imgStyleHandler,
+    },
+    animals: {
+        name: 'animals',
+        author: 'ProvenPsychology',
+        imageFormat: {
+            type: 'png',
+            genderSpecific: false
+        },
+        fontFormat: {
+            chineseFont: '',
+            englishFont: "Pangolin",
+        },
+        handler: imgStyleHandler,
+    },
+    Disney_princesses: {
+        name: 'Disney_princesses',
+        author: 'LittleMsArtsy',
+        imageFormat: {
+            type: 'png',
+            genderSpecific: false
+        },
+        fontFormat: {
+            chineseFont: '',
+            englishFont: "Pangolin",
         },
         handler: imgStyleHandler,
     },

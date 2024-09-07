@@ -150,6 +150,43 @@ function loadFontWithCache(fontConfig) {
     return fontPromise;
 }
 
+function resizeContainer(selector) {
+    return interact(selector)
+        .resizable({
+            edges: { left: true, right: true, bottom: true, top: true },
+            listeners: {
+                move(event) {
+                    var target = event.target
+                    var x = (parseFloat(target.getAttribute('data-x')) || 0)
+                    var y = (parseFloat(target.getAttribute('data-y')) || 0)
+
+                    target.style.width = event.rect.width + 'px'
+                    target.style.height = event.rect.height + 'px'
+
+                    x += event.deltaRect.left
+                    y += event.deltaRect.top
+
+                    target.style.transform = 'translate(' + x + 'px,' + y + 'px)'
+
+                    target.setAttribute('data-x', x)
+                    target.setAttribute('data-y', y)
+
+                    // 触发自定义事件
+                    target.dispatchEvent(new CustomEvent('resize', {
+                        detail: { width: event.rect.width, height: event.rect.height },
+                    }))
+                }
+            },
+            modifiers: [
+                interact.modifiers.restrictSize({
+                    min: { width: 170, height: 200 },
+                    max: { width: 900, height: 800 },
+                }),
+            ],
+        })
+}
+
+
 
 function debounce(func, delay) {
     let timer;
