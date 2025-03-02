@@ -149,6 +149,29 @@ function loadFontWithCache(fontConfig) {
     fontCache.set(cacheKey, fontPromise);
     return fontPromise;
 }
+// 在初始化时获取配置
+async function initializeStyleConfigs() {
+    const configUrl = `${imagesHostUrl}/configs/style-config.json`;
+    styleConfigs = await fetchWithCache(configUrl);
+
+    // 添加 getUrl 方法
+    Object.values(styleConfigs).forEach(config => {
+        if (!config.imageFormat.getUrl) {
+            config.imageFormat.getUrl = (personalityType, gender) => {
+                const baseUrl = `${imagesHostUrl}/avatars/${config.name}`;
+                let filePrefix = '';
+                if (config.name === 'classic') {
+                    filePrefix = `${personalityType.name.en.toLowerCase()}`;
+                } else {
+                    filePrefix = `${personalityType.type.slice(0, 4).toLowerCase()}`;
+                }
+                const genderSuffix = config.imageFormat.genderSpecific ? `-${gender}` : '';
+                return `${baseUrl}/${filePrefix}${genderSuffix}.${config.imageFormat.type}`;
+            };
+        }
+    });
+    return styleConfigs;
+}
 
 function resizeContainer(selector) {
     return interact(selector)

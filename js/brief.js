@@ -1,4 +1,4 @@
-function initializeBriefMBTI(config) {
+async function initializeBriefMBTI(config) {
     const createHTML = (personalityType) => {
 
         const sildeButton = config.interaction.slide ? `
@@ -140,6 +140,7 @@ function initializeBriefMBTI(config) {
             // avatar: `${imagesHostUrl}/${personalityType.type.toLowerCase()}-${personalityType.name.en.toLowerCase()}-s3-v1-${config.gender}.png?t=${Date.now()}`,
         }
     }
+    const styleConfigs = await initializeStyleConfigs();
     const personalityType = personalityTypes.find(p => p.type === currentPersonalityType.type.slice(0, 4));
     const characterColor = getFillColor(personalityType);
     container.style.setProperty('--character-color', characterColor);
@@ -327,219 +328,14 @@ class imgStyleHandler extends StyleHandler {
             });
     }
 }
-
-const styleConfigs = {
-    classic: {
-        name: 'classic',
-        author: 'Sourcegraph',
-        imageFormat: {
-            type: 'json',
-            genderSpecific: false,
-            getUrl: (personalityType) => `${imagesHostUrl}/avatars/classic/${personalityType.name.en.toLowerCase()}.json`
-        },
-        fontFormat: {
-            chineseFont: '',
-            englishFont: "Red Hat Display",
-        },
-        handler: ClassicStyleHandler,
-    },
-    illustration: {
-        name: 'illustration',
-        author: 'Shadoowww__',
-        imageFormat: {
-            type: 'jpg',
-            genderSpecific: false
-        },
-        fontFormat: {
-            chineseFont: '',
-            englishFont: "Rammetto One",
-        },
-        handler: imgStyleHandler,
-
-    },
-    comic: {
-        name: 'comic',
-        author: 'mbti_as_things',
-        imageFormat: {
-            type: 'png',
-            genderSpecific: true
-        },
-        fontFormat: {
-            chineseFont: 'HanYiFeiLi-Jian',
-            englishFont: "Lilita One",
-        },
-        handler: imgStyleHandler,
-    },
-    Mexico: {
-        name: 'Mexico',
-        author: '_.space.cadette._',
-        imageFormat: {
-            type: 'png',
-            genderSpecific: false
-        },
-        fontFormat: {
-            chineseFont: '',
-            englishFont: "Sacramento",
-        },
-        handler: imgStyleHandler,
-    },
-    Sanrio: {
-        name: 'Sanrio',
-        author: 'none',
-        imageFormat: {
-            type: 'png',
-            genderSpecific: false
-        },
-        fontFormat: {
-            chineseFont: '',
-            englishFont: "Gloria Hallelujah",
-        },
-        handler: imgStyleHandler,
-    },
-    simple_line_color: {
-        name: 'simple_line_color',
-        author: 'none',
-        imageFormat: {
-            type: 'png',
-            genderSpecific: false
-        },
-        fontFormat: {
-            chineseFont: '',
-            englishFont: "Single Day",
-        },
-        handler: imgStyleHandler,
-    },
-    simple_line_color_2: {
-        name: 'simple_line_color_2',
-        author: 'VIENNTJ',
-        imageFormat: {
-            type: 'png',
-            genderSpecific: true
-        },
-        fontFormat: {
-            chineseFont: '',
-            englishFont: "Yatra One",
-        },
-        handler: imgStyleHandler,
-    },
-    fantasy: {
-        name: 'fantasy',
-        author: 'akklonia',
-        imageFormat: {
-            type: 'png',
-            genderSpecific: false
-        },
-        fontFormat: {
-            chineseFont: '',
-            englishFont: "Barlow Condensed",
-        },
-        handler: imgStyleHandler,
-    },
-    Korean_comic: {
-        name: 'Korean_comic',
-        author: 'FJ',
-        imageFormat: {
-            type: 'png',
-            genderSpecific: false
-        },
-        fontFormat: {
-            chineseFont: '',
-            englishFont: "Annie Use Your Telescope",
-        },
-        handler: imgStyleHandler,
-    },
-    cat: {
-        name: 'cat',
-        author: 'none',
-        imageFormat: {
-            type: 'png',
-            genderSpecific: false
-        },
-        fontFormat: {
-            chineseFont: '',
-            englishFont: "Architects Daughter",
-        },
-        handler: imgStyleHandler,
-    },
-    classic_cute: {
-        name: 'classic_cute',
-        author: 'none',
-        imageFormat: {
-            type: 'png',
-            genderSpecific: false
-        },
-        fontFormat: {
-            chineseFont: '',
-            englishFont: "Architects Daughter",
-        },
-        handler: imgStyleHandler,
-    },
-    work: {
-        name: 'work',
-        author: 'mbti.friendly',
-        imageFormat: {
-            type: 'png',
-            genderSpecific: false
-        },
-        fontFormat: {
-            chineseFont: '',
-            englishFont: "Archivo Black",
-        },
-        handler: imgStyleHandler,
-    },
-    illustration_3: {
-        name: 'illustration_3',
-        author: 'toptier sensor',
-        imageFormat: {
-            type: 'png',
-            genderSpecific: false
-        },
-        fontFormat: {
-            chineseFont: '',
-            englishFont: "Sue Ellen Francisco",
-        },
-        handler: imgStyleHandler,
-    },
-    animals: {
-        name: 'animals',
-        author: 'ProvenPsychology',
-        imageFormat: {
-            type: 'png',
-            genderSpecific: false
-        },
-        fontFormat: {
-            chineseFont: '',
-            englishFont: "Pangolin",
-        },
-        handler: imgStyleHandler,
-    },
-    Disney_princesses: {
-        name: 'Disney_princesses',
-        author: 'LittleMsArtsy',
-        imageFormat: {
-            type: 'png',
-            genderSpecific: false
-        },
-        fontFormat: {
-            chineseFont: '',
-            englishFont: "Pangolin",
-        },
-        handler: imgStyleHandler,
-    },
+const handlers = {
+    'ClassicStyleHandler': ClassicStyleHandler,
+    'imgStyleHandler': imgStyleHandler
 };
-Object.values(styleConfigs).forEach(config => {
-    if (!config.imageFormat.getUrl) {
-        config.imageFormat.getUrl = (personalityType, gender) => {
-            const baseUrl = `${imagesHostUrl}/avatars/${config.name}/${personalityType.type.slice(0, 4).toLowerCase()}`;
-            const genderSuffix = config.imageFormat.genderSpecific ? `-${gender}` : '';
-            return `${baseUrl}${genderSuffix}.${config.imageFormat.type}`;
-        };
-    }
-});
-
 const styleHandlerFactory = {
     getHandler(style) {
-        const Handler = styleConfigs[style]['handler'] || imgStyleHandler;
+        const handlerKey = styleConfigs[style]['handlerKey'] || 'imgStyleHandler';
+        const Handler = handlers[handlerKey];
         return new Handler();
     },
 
